@@ -1,30 +1,36 @@
 :root {
   color-scheme: light;
-  --bg: #f4f7f8;
-  --page-start: #f8fbfc;
-  --page-end: #eef3f5;
+  --bg: #eef4f5;
+  --page-start: #fbfdfc;
+  --page-end: #e8eef0;
   --surface: #ffffff;
   --surface-strong: #ffffff;
-  --field: #f7f9fa;
-  --card-muted: #f1f6f6;
-  --ink: #14201f;
-  --muted: #63706f;
-  --line: #dce5e6;
-  --box-border: #d5e0e1;
-  --primary: #075f63;
-  --primary-dark: #04474b;
-  --primary-soft: #e4f3f2;
-  --accent: #2d7ff9;
-  --accent-soft: #eaf2ff;
+  --field: #f5f8f8;
+  --card-muted: #edf5f4;
+  --ink: #101b1c;
+  --muted: #5f6f71;
+  --line: #d7e2e2;
+  --box-border: #cddadb;
+  --primary: #075e63;
+  --primary-dark: #03474d;
+  --primary-soft: #e2f2ef;
+  --accent: #2f6fed;
+  --accent-soft: #e8f0ff;
+  --mint: #18a886;
+  --mint-soft: #e3f7f0;
+  --gold: #bf7b18;
+  --gold-soft: #fff4df;
   --danger: #b4433d;
   --danger-soft: #fff1ef;
-  --hero-a: #054f55;
-  --hero-b: #087a76;
+  --hero-a: #063f46;
+  --hero-b: #0b8379;
+  --hero-c: #2f6fed;
   --focus: rgba(45, 127, 249, 0.18);
   --soft-border: rgba(213, 224, 225, 0.9);
-  --button-shadow: rgba(15, 36, 38, 0.06);
+  --button-shadow: rgba(15, 36, 38, 0.07);
   --primary-shadow: rgba(7, 95, 99, 0.18);
-  --shadow: 0 12px 32px rgba(15, 36, 38, 0.08);
+  --shadow: 0 14px 36px rgba(15, 36, 38, 0.09);
+  --shadow-soft: 0 8px 20px rgba(15, 36, 38, 0.06);
 }
 
 html[data-theme="dark"] {
@@ -45,15 +51,21 @@ html[data-theme="dark"] {
   --primary-soft: #173a3d;
   --accent: #7db4ff;
   --accent-soft: #152844;
+  --mint: #67dbc2;
+  --mint-soft: #163630;
+  --gold: #f2b95b;
+  --gold-soft: #392a14;
   --danger: #f08f87;
   --danger-soft: #3a211f;
   --hero-a: #0a4f56;
   --hero-b: #0b7d79;
+  --hero-c: #2f6fed;
   --focus: rgba(125, 180, 255, 0.2);
   --soft-border: rgba(43, 65, 71, 0.95);
   --button-shadow: rgba(0, 0, 0, 0.22);
   --primary-shadow: rgba(117, 215, 210, 0.14);
   --shadow: 0 16px 42px rgba(0, 0, 0, 0.32);
+  --shadow-soft: 0 10px 26px rgba(0, 0, 0, 0.22);
 }
 
 * {
@@ -64,6 +76,7 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
+    linear-gradient(135deg, color-mix(in srgb, var(--primary) 10%, transparent) 0 18%, transparent 18% 100%),
     linear-gradient(180deg, var(--page-start) 0%, var(--bg) 48%, var(--page-end) 100%);
   color: var(--ink);
   font-family: "Inter", "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, ui-sans-serif, system-ui, sans-serif;
@@ -125,9 +138,10 @@ body:has(.app-content[hidden]) .header-actions {
   margin-bottom: 16px;
   padding: 14px 16px;
   border: 1px solid var(--box-border);
-  border-radius: 22px;
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
-  box-shadow: 0 10px 30px var(--button-shadow);
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(18px);
 }
 
 .header-actions {
@@ -143,7 +157,7 @@ body:has(.app-content[hidden]) .header-actions {
   width: 48px;
   border: 1px solid var(--box-border);
   border-radius: 999px;
-  background: var(--surface);
+  background: linear-gradient(180deg, var(--surface), var(--field));
   color: var(--ink);
   padding: 0;
   cursor: pointer;
@@ -158,10 +172,29 @@ body:has(.app-content[hidden]) .header-actions {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: var(--primary-soft);
+  background: linear-gradient(135deg, var(--primary-soft), var(--accent-soft));
   color: var(--primary);
-  font-size: 1rem;
+  font-size: 0;
   line-height: 1;
+}
+
+.theme-icon::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: inset -5px -2px 0 var(--primary-soft);
+}
+
+html[data-theme="dark"] .theme-icon::before {
+  width: 14px;
+  height: 14px;
+  border-radius: 50% 50% 46% 46%;
+  background: var(--primary);
+  box-shadow:
+    0 10px 0 -8px var(--primary),
+    0 13px 0 -9px var(--primary);
 }
 
 .eyebrow {
@@ -200,8 +233,8 @@ h2 {
   padding: 10px;
   border: 1px solid var(--box-border);
   border-radius: 16px;
-  background: var(--surface);
-  box-shadow: none;
+  background: linear-gradient(180deg, var(--surface), var(--field));
+  box-shadow: var(--shadow-soft);
 }
 
 .month-picker label,
@@ -278,9 +311,9 @@ h2 {
 
 .hero-summary {
   display: grid;
-  grid-template-columns: minmax(280px, 1.15fr) minmax(320px, 1fr);
-  gap: 12px;
-  margin-bottom: 14px;
+  grid-template-columns: minmax(300px, 1.25fr) minmax(320px, 0.95fr);
+  gap: 14px;
+  margin-bottom: 16px;
 }
 
 .auth-panel {
@@ -444,30 +477,55 @@ body:has(.app-content[hidden]) .auth-panel {
   overflow: hidden;
   display: grid;
   align-content: end;
-  min-height: 182px;
-  padding: 22px;
+  min-height: 196px;
+  padding: 24px;
   border: 0;
-  border-radius: 22px;
+  border-radius: 26px;
   background:
-    linear-gradient(145deg, color-mix(in srgb, var(--hero-a) 96%, transparent), color-mix(in srgb, var(--hero-b) 92%, transparent)),
+    linear-gradient(135deg, color-mix(in srgb, var(--hero-a) 98%, transparent), color-mix(in srgb, var(--hero-b) 86%, transparent) 58%, color-mix(in srgb, var(--hero-c) 52%, var(--hero-b))),
     var(--primary);
   color: #ffffff;
-  box-shadow: 0 18px 42px color-mix(in srgb, var(--primary) 18%, transparent);
+  box-shadow: 0 22px 54px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+.total-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 42%;
+  background: rgba(255, 255, 255, 0.11);
+  clip-path: polygon(34% 0, 100% 0, 100% 100%, 0 100%);
 }
 
 .total-card::after {
   content: "";
   position: absolute;
-  right: 18px;
-  top: 18px;
-  width: 52px;
-  height: 34px;
-  border: 1px solid rgba(255, 255, 255, 0.34);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.12);
+  inset: 0;
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.16), transparent 38%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 22px);
+  pointer-events: none;
 }
 
-.total-card span,
+.total-badge {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 1;
+  display: inline-grid;
+  place-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.78rem;
+  font-weight: 700;
+  backdrop-filter: blur(12px);
+}
+
+.total-card > span:not(.total-badge),
 .total-card small {
   position: relative;
   z-index: 1;
@@ -488,23 +546,86 @@ body:has(.app-content[hidden]) .auth-panel {
 .summary-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 10px;
+  gap: 12px;
 }
 
 .summary-card {
+  position: relative;
+  overflow: hidden;
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: auto 1fr auto;
   gap: 12px;
   align-items: center;
-  min-height: 62px;
-  padding: 16px;
-  border-radius: 16px;
+  min-height: 64px;
+  padding: 16px 16px 16px 18px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--field) 62%, var(--surface)));
+  box-shadow: var(--shadow-soft);
+}
+
+.summary-card::before {
+  content: "";
+  width: 6px;
+  align-self: stretch;
+  border-radius: 999px;
+  background: var(--primary);
+}
+
+.summary-card::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 26%;
+  height: 100%;
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  clip-path: polygon(42% 0, 100% 0, 100% 100%, 0 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.summary-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.summary-card > span {
+  grid-column: 2;
+}
+
+.summary-card > strong {
+  grid-column: 3;
+}
+
+.summary-daily::before {
+  background: var(--mint);
+}
+
+.summary-daily::after {
+  background: color-mix(in srgb, var(--mint) 12%, transparent);
+}
+
+.summary-cards::before {
+  background: var(--accent);
+}
+
+.summary-cards::after {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.summary-next::before {
+  background: var(--gold);
+}
+
+.summary-next::after {
+  background: color-mix(in srgb, var(--gold) 13%, transparent);
 }
 
 .summary-card span {
   color: var(--muted);
   font-size: 0.86rem;
-  font-weight: 580;
+  font-weight: 650;
+  text-transform: uppercase;
 }
 
 .summary-card strong {
@@ -522,9 +643,9 @@ body:has(.app-content[hidden]) .auth-panel {
   margin-bottom: 16px;
   padding: 6px;
   border: 1px solid var(--box-border);
-  border-radius: 18px;
-  background: var(--surface);
-  box-shadow: 0 12px 30px var(--button-shadow);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  box-shadow: var(--shadow-soft);
   backdrop-filter: blur(16px);
 }
 
@@ -546,7 +667,7 @@ body:has(.app-content[hidden]) .auth-panel {
 }
 
 .tab.active {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 72%, var(--accent)));
   color: #ffffff;
   box-shadow: 0 8px 20px var(--primary-shadow);
 }
@@ -564,7 +685,10 @@ body:has(.app-content[hidden]) .auth-panel {
   gap: 12px;
   margin-bottom: 24px;
   padding: 16px;
-  border-radius: 18px;
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, transparent), color-mix(in srgb, var(--field) 44%, var(--surface)));
+  box-shadow: var(--shadow-soft);
 }
 
 .compact-form {
@@ -604,7 +728,7 @@ body:has(.app-content[hidden]) .auth-panel {
   min-width: max-content;
   border: 1px solid var(--box-border);
   border-radius: 14px;
-  background: var(--surface);
+  background: linear-gradient(180deg, var(--surface), var(--field));
   color: var(--ink);
   padding: 10px 13px;
   cursor: pointer;
@@ -620,8 +744,9 @@ body:has(.app-content[hidden]) .auth-panel {
 
 .card-pill.active {
   border-color: var(--primary);
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 70%, var(--accent)));
   color: #ffffff;
+  box-shadow: 0 10px 22px var(--primary-shadow);
 }
 
 .card-pill.active span {
@@ -639,9 +764,9 @@ body:has(.app-content[hidden]) .auth-panel {
   gap: 14px;
   padding: 16px;
   border: 1px solid var(--box-border);
-  border-radius: 18px;
-  background: var(--surface);
-  box-shadow: var(--shadow);
+  border-radius: 20px;
+  background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--field) 52%, var(--surface)));
+  box-shadow: var(--shadow-soft);
 }
 
 .card-detail-title {
@@ -666,7 +791,8 @@ body:has(.app-content[hidden]) .auth-panel {
   gap: 5px;
   padding: 12px;
   border-radius: 16px;
-  background: var(--card-muted);
+  border: 1px solid color-mix(in srgb, var(--box-border) 72%, transparent);
+  background: color-mix(in srgb, var(--card-muted) 82%, var(--surface));
 }
 
 .card-metric span {
@@ -682,7 +808,7 @@ body:has(.app-content[hidden]) .auth-panel {
 
 .primary-action {
   min-height: 50px;
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 72%, var(--accent)));
   color: #ffffff;
   box-shadow: 0 14px 28px var(--primary-shadow);
   transition: transform 150ms ease, background 150ms ease;
@@ -747,8 +873,9 @@ body:has(.app-content[hidden]) .auth-panel {
   gap: 12px;
   align-items: center;
   padding: 15px;
-  border-radius: 16px;
-  box-shadow: none;
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--field) 44%, var(--surface)));
+  box-shadow: var(--shadow-soft);
 }
 
 .item-main {
@@ -805,7 +932,7 @@ body:has(.app-content[hidden]) .auth-panel {
   min-height: 60px;
   padding: 13px 15px;
   border-bottom: 1px solid var(--line);
-  background: var(--surface);
+  background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--field) 36%, var(--surface)));
 }
 
 .projection-row:last-child {
