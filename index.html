@@ -164,19 +164,25 @@
             <label>Compra
               <input name="purchase" type="text" maxlength="80" placeholder="Notebook, zapatillas, seguro..." required>
             </label>
+            <label>Gasto fijo
+              <select name="isFixedExpense" id="fixedExpenseSelect" required>
+                <option value="no">No</option>
+                <option value="yes">Si</option>
+              </select>
+            </label>
             <div class="form-row">
-              <label>Monto total
+              <label>Monto
                 <span class="money-input">
                   <span>$</span>
                   <input name="amount" type="text" inputmode="numeric" autocomplete="off" data-money placeholder="0" required>
                 </span>
               </label>
-              <label>Cuotas totales
+              <label data-installment-field>Cuotas totales
                 <input name="installments" type="number" min="1" step="1" inputmode="numeric" required>
               </label>
             </div>
             <div class="form-row">
-              <label>Cuotas pagas
+              <label data-installment-field>Cuotas pagas
                 <input name="paidInstallments" type="number" min="0" step="1" inputmode="numeric" value="0" required>
               </label>
               <label>Primer vencimiento

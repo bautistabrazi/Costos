@@ -36,6 +36,7 @@ const dailyForm = document.querySelector("#dailyForm");
 const newCardForm = document.querySelector("#newCardForm");
 const cardForm = document.querySelector("#cardForm");
 const cardSelect = cardForm.elements.cardId;
+const fixedExpenseSelect = document.querySelector("#fixedExpenseSelect");
 const dailyList = document.querySelector("#dailyList");
 const cardList = document.querySelector("#cardList");
 const cardPicker = document.querySelector("#cardPicker");
@@ -73,12 +74,14 @@ async function init() {
   newCardForm.addEventListener("submit", addCard);
   cardForm.addEventListener("submit", addCardPurchase);
   cardSelect.addEventListener("change", () => selectCard(cardSelect.value));
+  fixedExpenseSelect.addEventListener("change", syncFixedExpenseFields);
   document.querySelector("#clearDaily").addEventListener("click", clearDailyMonth);
   document.querySelectorAll("[data-money]").forEach((input) => {
     input.addEventListener("input", () => formatMoneyInput(input));
   });
 
   setupSupabase();
+  syncFixedExpenseFields();
   render();
 }
 
@@ -518,8 +521,9 @@ async function addCardPurchase(event) {
   const form = event.currentTarget;
   const data = new FormData(form);
   const cardId = data.get("cardId");
-  const installments = Number(data.get("installments"));
-  const paidInstallments = Math.min(Number(data.get("paidInstallments")), installments);
+  const isFixedExpense = data.get("isFixedExpense") === "yes";
+  const installments = isFixedExpense ? 1 : Number(data.get("installments"));
+  const paidInstallments = isFixedExpense ? 0 : Math.min(Number(data.get("paidInstallments")), installments);
 
   if (!state.cards.some((card) => card.id === cardId)) return;
 
@@ -532,6 +536,8 @@ async function addCardPurchase(event) {
     installments,
     paid_installments: paidInstallments,
     first_due_month: data.get("firstDueMonth"),
+    is_fixed_expense: isFixedExpense,
+    fixed_expense_active: true,
   };
 
   const { data: inserted, error } = await supabaseClient.from("card_purchases").insert(payload).select().single();
@@ -541,8 +547,10 @@ async function addCardPurchase(event) {
   state.selectedCardId = cardId;
   form.elements.purchase.value = "";
   form.elements.amount.value = "";
+  form.elements.isFixedExpense.value = "no";
   form.elements.installments.value = "";
   form.elements.paidInstallments.value = "0";
+  syncFixedExpenseFields();
   render();
 }
 
@@ -655,7 +663,7 @@ function renderSelectedCardSummary(selectedMonth) {
   const card = getSelectedCard();
   if (!card) return;
 
-  const activePurchases = purchasesForCard(card.id).filter((purchase) => remainingInstallments(purchase) > 0);
+  const activePurchases = purchasesForCard(card.id).filter(isActiveCardPurchase);
   const detail = document.createElement("article");
   detail.className = "card-detail-card";
   detail.innerHTML = `
@@ -686,12 +694,13 @@ function setCardFormEnabled(enabled) {
   cardForm.querySelectorAll("input, select, button").forEach((field) => {
     field.disabled = !enabled;
   });
+  syncFixedExpenseFields();
 }
 
 function renderCardList(selectedMonth) {
   cardList.innerHTML = "";
   const card = getSelectedCard();
-  const activePurchases = card ? purchasesForCard(card.id).filter((purchase) => remainingInstallments(purchase) > 0) : [];
+  const activePurchases = card ? purchasesForCard(card.id).filter(isActiveCardPurchase) : [];
   document.querySelector("#cardsCount").textContent = card
     ? `${activePurchases.length} compras activas`
     : "Agrega tus tarjetas";
@@ -705,15 +714,18 @@ function renderCardList(selectedMonth) {
     .sort((a, b) => a.purchaseDate.localeCompare(b.purchaseDate))
     .forEach((purchase) => {
       const installment = installmentNumberForMonth(purchase, selectedMonth);
-      const installmentAmount = purchase.amount / purchase.installments;
+      const amount = cardPurchaseAmountForMonth(purchase);
+      const meta = purchase.isFixedExpense
+        ? `${card.name} - Gasto fijo mensual`
+        : `${card.name} - Cuota ${installment}/${purchase.installments} - ${remainingInstallments(purchase)} pendientes`;
 
       cardList.append(
         createItem({
           title: purchase.purchase,
-          meta: `${card.name} - Cuota ${installment}/${purchase.installments} - ${remainingInstallments(purchase)} pendientes`,
-          amount: installmentAmount,
-          payLabel: "Pagar",
-          onPay: () => markCardInstallmentPaid(purchase.id),
+          meta,
+          amount,
+          payLabel: purchase.isFixedExpense ? null : "Pagar",
+          onPay: purchase.isFixedExpense ? null : () => markCardInstallmentPaid(purchase.id),
           onDelete: () => deleteCardPurchase(purchase.id),
         }),
       );
@@ -871,19 +883,23 @@ function cardTotalForMonth(month, cardId = null) {
     state.cardPurchases
       .filter((purchase) => (cardId ? purchase.cardId === cardId : true))
       .filter((purchase) => installmentNumberForMonth(purchase, month) !== null)
-      .map((purchase) => purchase.amount / purchase.installments),
+      .map(cardPurchaseAmountForMonth),
   );
 }
 
 function cardPendingDebt(cardId) {
   return sum(
-    purchasesForCard(cardId).map((purchase) => {
+    purchasesForCard(cardId).filter((purchase) => !purchase.isFixedExpense).map((purchase) => {
       return (purchase.amount / purchase.installments) * remainingInstallments(purchase);
     }),
   );
 }
 
 function installmentNumberForMonth(purchase, month) {
+  if (purchase.isFixedExpense) {
+    return purchase.fixedExpenseActive && monthsBetween(purchase.firstDueMonth, month) >= 0 ? 1 : null;
+  }
+
   const monthIndex = monthsBetween(purchase.firstDueMonth, month);
   if (monthIndex < 0 || monthIndex >= purchase.installments) return null;
 
@@ -893,7 +909,16 @@ function installmentNumberForMonth(purchase, month) {
 }
 
 function remainingInstallments(purchase) {
+  if (purchase.isFixedExpense) return purchase.fixedExpenseActive ? 1 : 0;
   return Math.max(purchase.installments - purchase.paidInstallments, 0);
+}
+
+function isActiveCardPurchase(purchase) {
+  return purchase.isFixedExpense ? purchase.fixedExpenseActive : remainingInstallments(purchase) > 0;
+}
+
+function cardPurchaseAmountForMonth(purchase) {
+  return purchase.isFixedExpense ? purchase.amount : purchase.amount / purchase.installments;
 }
 
 function mapCardFromDb(row) {
@@ -921,7 +946,25 @@ function mapPurchaseFromDb(row) {
     installments: Number(row.installments),
     paidInstallments: Number(row.paid_installments),
     firstDueMonth: row.first_due_month,
+    isFixedExpense: Boolean(row.is_fixed_expense),
+    fixedExpenseActive: row.fixed_expense_active !== false,
   };
+}
+
+function syncFixedExpenseFields() {
+  const isFixedExpense = fixedExpenseSelect.value === "yes";
+  const formEnabled = !cardForm.classList.contains("disabled");
+  cardForm.querySelectorAll("[data-installment-field]").forEach((field) => {
+    field.hidden = isFixedExpense;
+    field.querySelectorAll("input").forEach((input) => {
+      input.disabled = !formEnabled || isFixedExpense;
+      input.required = !isFixedExpense;
+    });
+  });
+  if (isFixedExpense) {
+    cardForm.elements.installments.value = "1";
+    cardForm.elements.paidInstallments.value = "0";
+  }
 }
 
 function sum(values) {

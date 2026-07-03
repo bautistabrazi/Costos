@@ -26,9 +26,17 @@ create table if not exists public.card_purchases (
   installments integer not null check (installments > 0),
   paid_installments integer not null default 0 check (paid_installments >= 0),
   first_due_month text not null,
+  is_fixed_expense boolean not null default false,
+  fixed_expense_active boolean not null default true,
   created_at timestamptz not null default now(),
   constraint paid_installments_lte_installments check (paid_installments <= installments)
 );
+
+alter table public.card_purchases
+  add column if not exists is_fixed_expense boolean not null default false;
+
+alter table public.card_purchases
+  add column if not exists fixed_expense_active boolean not null default true;
 
 alter table public.cards enable row level security;
 alter table public.daily_expenses enable row level security;
