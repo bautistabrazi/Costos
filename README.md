@@ -24,8 +24,8 @@ Para sincronizar entre dispositivos:
 2. Ejecutar `supabase-schema.sql` en el SQL Editor del proyecto.
 3. Copiar `config.example.js` a `config.js`.
 4. Completar `url` y `anonKey` con los datos del proyecto.
-5. En Supabase Auth, agregar la URL de Vercel como redirect URL permitida.
-6. Para usar contrasena sin confirmacion por email, desactivar la confirmacion obligatoria de email en Auth.
+5. En Vercel, configurar `SUPABASE_SERVICE_ROLE_KEY` como variable de entorno con la secret key de Supabase.
+6. El registro usa `/api/signup` para crear la cuenta ya confirmada y luego iniciar sesion con el mismo mail y contrasena.
 
 ## Proximos pasos posibles
 

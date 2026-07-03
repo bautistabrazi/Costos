@@ -1,4 +1,4 @@
-const CACHE_NAME = "organizador-gastos-v7";
+const CACHE_NAME = "organizador-gastos-v8";
 const ASSETS = ["./", "./index.html", "./styles.css", "./app.js", "./config.js", "./manifest.json"];
 
 self.addEventListener("install", (event) => {

@@ -136,39 +136,35 @@ async function submitAuthForm(event) {
   const formData = new FormData(event.currentTarget);
   const email = formData.get("email").trim();
   const password = formData.get("password");
-  if (!email || !password) {
-    authMessage.textContent = "Completa tu correo y contrasena para continuar.";
+  if (!isValidEmail(email)) {
+    authMessage.textContent = "Ingresa un correo electronico valido.";
     return;
   }
 
-  if (password.length < 6) {
-    authMessage.textContent = "La contrasena debe tener al menos 6 caracteres.";
+  if (!password) {
+    authMessage.textContent = "Ingresa una contrasena para continuar.";
     return;
   }
 
-  const redirectTo = window.location.href.split("#")[0];
   setAuthBusy(true);
   authMessage.textContent = authMode === "signup" ? "Creando tu cuenta..." : "Ingresando a tu cuenta...";
 
   try {
-    const { data, error } =
-      authMode === "signup"
-        ? await supabaseClient.auth.signUp({
-            email,
-            password,
-            options: { emailRedirectTo: redirectTo },
-          })
-        : await supabaseClient.auth.signInWithPassword({ email, password });
+    if (authMode === "signup") {
+      const signupResult = await createAccount(email, password);
+      if (signupResult.error) {
+        authMessage.textContent = signupResult.error;
+        return;
+      }
+    }
 
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if (error) {
       authMessage.textContent = getAuthErrorMessage(error);
       return;
     }
 
-    authMessage.textContent =
-      authMode === "signup" && !data.session
-        ? "Cuenta creada. Revisa tu correo para confirmarla y luego inicia sesion."
-        : "Ingreso correcto. Cargando tus datos...";
+    authMessage.textContent = "Ingreso correcto. Cargando tus datos...";
   } catch (error) {
     authMessage.textContent = `No se pudo conectar con Supabase: ${error.message}`;
   } finally {
@@ -251,7 +247,7 @@ function setAuthMode(mode) {
   signupModeButton.setAttribute("aria-selected", String(isSignup));
   authForm.elements.password.autocomplete = isSignup ? "new-password" : "current-password";
   authMessage.textContent = isSignup
-    ? "Crea una cuenta con correo y contrasena para guardar tus datos en la nube."
+    ? "Crea tu cuenta y entra automaticamente con ese mismo correo y contrasena."
     : "Ingresa con tu correo y contrasena para acceder a tus gastos.";
 }
 
@@ -270,6 +266,25 @@ function updateAuthButtonText() {
   }
 
   authSubmitButton.textContent = authMode === "signup" ? "Crear cuenta" : "Ingresar";
+}
+
+async function createAccount(email, password) {
+  const response = await fetch("/api/signup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  const result = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    return { error: result.error || "No se pudo crear la cuenta." };
+  }
+
+  return { error: null };
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 function setAppEnabled(enabled) {
@@ -719,7 +734,7 @@ function getAuthErrorMessage(error) {
   }
 
   if (normalized.includes("password")) {
-    return "La contrasena no cumple los requisitos. Usa al menos 6 caracteres.";
+    return "La contrasena no coincide con la cuenta o Supabase no la acepto.";
   }
 
   if (normalized.includes("email")) {
