@@ -7,9 +7,10 @@ App local para registrar gastos diarios, compras con tarjeta en cuotas y ver res
 1. Abrir `index.html` en el navegador.
 2. Elegir el mes desde el selector superior.
 3. Cargar gastos diarios desde la pestana `Gastos`.
-4. Cargar compras con tarjeta desde la pestana `Tarjetas`.
-5. Usar `Pagar` para marcar una cuota como pagada.
-6. Revisar la pestana `Proyeccion` para ver los proximos 12 meses.
+4. Crear tus tarjetas desde la pestana `Tarjetas`.
+5. Elegir una tarjeta y cargar compras asociadas a esa tarjeta.
+6. Usar `Pagar` para marcar una cuota como pagada.
+7. Revisar la pestana `Proyeccion` para ver los proximos 12 meses.
 
 Los datos se guardan en el navegador usando `localStorage`.
 

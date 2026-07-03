@@ -1,4 +1,5 @@
-const STORAGE_KEY = "organizador-gastos-v1";
+const STORAGE_KEY = "organizador-gastos-v2";
+const LEGACY_STORAGE_KEY = "organizador-gastos-v1";
 
 const state = loadState();
 const money = new Intl.NumberFormat("es-AR", {
@@ -9,9 +10,13 @@ const money = new Intl.NumberFormat("es-AR", {
 
 const monthFilter = document.querySelector("#monthFilter");
 const dailyForm = document.querySelector("#dailyForm");
+const newCardForm = document.querySelector("#newCardForm");
 const cardForm = document.querySelector("#cardForm");
+const cardSelect = cardForm.elements.cardId;
 const dailyList = document.querySelector("#dailyList");
 const cardList = document.querySelector("#cardList");
+const cardPicker = document.querySelector("#cardPicker");
+const selectedCardSummary = document.querySelector("#selectedCardSummary");
 const projectionList = document.querySelector("#projectionList");
 const emptyTemplate = document.querySelector("#emptyState");
 
@@ -35,25 +40,57 @@ function init() {
 
   monthFilter.addEventListener("change", render);
   dailyForm.addEventListener("submit", addDailyExpense);
+  newCardForm.addEventListener("submit", addCard);
   cardForm.addEventListener("submit", addCardPurchase);
+  cardSelect.addEventListener("change", () => selectCard(cardSelect.value));
   document.querySelector("#clearDaily").addEventListener("click", clearDailyMonth);
 
   render();
 }
 
 function loadState() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return { dailyExpenses: [], cardPurchases: [] };
+  const raw = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_STORAGE_KEY);
+  const emptyState = { dailyExpenses: [], cards: [], cardPurchases: [], selectedCardId: null };
+  if (!raw) return emptyState;
 
   try {
-    const parsed = JSON.parse(raw);
-    return {
-      dailyExpenses: parsed.dailyExpenses ?? [],
-      cardPurchases: parsed.cardPurchases ?? [],
-    };
+    return migrateState(JSON.parse(raw));
   } catch {
-    return { dailyExpenses: [], cardPurchases: [] };
+    return emptyState;
   }
+}
+
+function migrateState(parsed) {
+  const migrated = {
+    dailyExpenses: parsed.dailyExpenses ?? [],
+    cards: parsed.cards ?? [],
+    cardPurchases: parsed.cardPurchases ?? [],
+    selectedCardId: parsed.selectedCardId ?? null,
+  };
+
+  migrated.cardPurchases.forEach((purchase) => {
+    if (purchase.cardId) return;
+
+    const legacyName = purchase.cardName?.trim();
+    if (!legacyName) return;
+
+    let card = migrated.cards.find((item) => item.name.toLowerCase() === legacyName.toLowerCase());
+    if (!card) {
+      card = { id: crypto.randomUUID(), name: legacyName };
+      migrated.cards.push(card);
+    }
+    purchase.cardId = card.id;
+  });
+
+  migrated.cardPurchases.forEach((purchase) => {
+    delete purchase.cardName;
+  });
+
+  if (!migrated.cards.some((card) => card.id === migrated.selectedCardId)) {
+    migrated.selectedCardId = migrated.cards[0]?.id ?? null;
+  }
+
+  return migrated;
 }
 
 function saveState() {
@@ -89,16 +126,40 @@ function addDailyExpense(event) {
   render();
 }
 
+function addCard(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const name = new FormData(form).get("name").trim();
+  if (!name) return;
+
+  const existing = state.cards.find((card) => card.name.toLowerCase() === name.toLowerCase());
+  if (existing) {
+    selectCard(existing.id);
+    form.reset();
+    return;
+  }
+
+  const card = { id: crypto.randomUUID(), name };
+  state.cards.push(card);
+  state.selectedCardId = card.id;
+  form.reset();
+  saveState();
+  render();
+}
+
 function addCardPurchase(event) {
   event.preventDefault();
   const form = event.currentTarget;
   const data = new FormData(form);
+  const cardId = data.get("cardId");
   const installments = Number(data.get("installments"));
   const paidInstallments = Math.min(Number(data.get("paidInstallments")), installments);
 
+  if (!state.cards.some((card) => card.id === cardId)) return;
+
   state.cardPurchases.push({
     id: crypto.randomUUID(),
-    cardName: data.get("cardName").trim(),
+    cardId,
     purchaseDate: data.get("purchaseDate"),
     purchase: data.get("purchase").trim(),
     amount: Number(data.get("amount")),
@@ -107,10 +168,18 @@ function addCardPurchase(event) {
     firstDueMonth: data.get("firstDueMonth"),
   });
 
+  state.selectedCardId = cardId;
   form.elements.purchase.value = "";
   form.elements.amount.value = "";
   form.elements.installments.value = "";
   form.elements.paidInstallments.value = "0";
+  saveState();
+  render();
+}
+
+function selectCard(cardId) {
+  if (!state.cards.some((card) => card.id === cardId)) return;
+  state.selectedCardId = cardId;
   saveState();
   render();
 }
@@ -142,6 +211,7 @@ function render() {
   document.querySelector("#nextMonthTotal").textContent = formatMoney(nextMonthCards);
 
   renderDailyList(dailyThisMonth);
+  renderCardControls(selectedMonth);
   renderCardList(selectedMonth);
   renderProjection(selectedMonth);
 }
@@ -164,24 +234,110 @@ function renderDailyList(items) {
     });
 }
 
+function renderCardControls(selectedMonth) {
+  if (!state.cards.some((card) => card.id === state.selectedCardId)) {
+    state.selectedCardId = state.cards[0]?.id ?? null;
+  }
+
+  renderCardPicker(selectedMonth);
+  renderCardSelect();
+  renderSelectedCardSummary(selectedMonth);
+  setCardFormEnabled(state.cards.length > 0);
+}
+
+function renderCardPicker(selectedMonth) {
+  cardPicker.innerHTML = "";
+  if (!state.cards.length) {
+    appendEmpty(cardPicker);
+    return;
+  }
+
+  state.cards.forEach((card) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "card-pill";
+    button.classList.toggle("active", card.id === state.selectedCardId);
+    button.innerHTML = `<strong>${escapeHtml(card.name)}</strong><span>${formatMoney(cardTotalForMonth(selectedMonth, card.id))} este mes</span>`;
+    button.addEventListener("click", () => selectCard(card.id));
+    cardPicker.append(button);
+  });
+}
+
+function renderCardSelect() {
+  cardSelect.innerHTML = "";
+
+  if (!state.cards.length) {
+    cardSelect.append(new Option("Agrega una tarjeta primero", ""));
+    return;
+  }
+
+  state.cards.forEach((card) => {
+    cardSelect.append(new Option(card.name, card.id));
+  });
+  cardSelect.value = state.selectedCardId;
+}
+
+function renderSelectedCardSummary(selectedMonth) {
+  selectedCardSummary.innerHTML = "";
+  const card = getSelectedCard();
+  if (!card) return;
+
+  const activePurchases = purchasesForCard(card.id).filter((purchase) => remainingInstallments(purchase) > 0);
+  const detail = document.createElement("article");
+  detail.className = "card-detail-card";
+  detail.innerHTML = `
+    <div class="card-detail-title">
+      <strong>${escapeHtml(card.name)}</strong>
+      <span class="soft-label">${activePurchases.length} compras activas</span>
+    </div>
+    <div class="card-metrics">
+      <div class="card-metric">
+        <span>A pagar este mes</span>
+        <strong>${formatMoney(cardTotalForMonth(selectedMonth, card.id))}</strong>
+      </div>
+      <div class="card-metric">
+        <span>Deuda pendiente</span>
+        <strong>${formatMoney(cardPendingDebt(card.id))}</strong>
+      </div>
+      <div class="card-metric">
+        <span>Proximo mes</span>
+        <strong>${formatMoney(cardTotalForMonth(addMonths(selectedMonth, 1), card.id))}</strong>
+      </div>
+    </div>
+  `;
+  selectedCardSummary.append(detail);
+}
+
+function setCardFormEnabled(enabled) {
+  cardForm.classList.toggle("disabled", !enabled);
+  cardForm.querySelectorAll("input, select, button").forEach((field) => {
+    field.disabled = !enabled;
+  });
+}
+
 function renderCardList(selectedMonth) {
   cardList.innerHTML = "";
-  const activePurchases = state.cardPurchases.filter((purchase) => remainingInstallments(purchase) > 0);
-  document.querySelector("#cardsCount").textContent = `${activePurchases.length} compras activas`;
+  const card = getSelectedCard();
+  const activePurchases = card ? purchasesForCard(card.id).filter((purchase) => remainingInstallments(purchase) > 0) : [];
+  document.querySelector("#cardsCount").textContent = card
+    ? `${activePurchases.length} compras activas`
+    : "Agrega tus tarjetas";
+
+  if (!card) return appendEmpty(cardList);
 
   const duePurchases = activePurchases.filter((purchase) => installmentNumberForMonth(purchase, selectedMonth) !== null);
   if (!duePurchases.length) return appendEmpty(cardList);
 
   [...duePurchases]
-    .sort((a, b) => a.cardName.localeCompare(b.cardName))
+    .sort((a, b) => a.purchaseDate.localeCompare(b.purchaseDate))
     .forEach((purchase) => {
       const installment = installmentNumberForMonth(purchase, selectedMonth);
       const installmentAmount = purchase.amount / purchase.installments;
 
       cardList.append(
         createItem({
-          title: `${purchase.cardName} - ${purchase.purchase}`,
-          meta: `Cuota ${installment}/${purchase.installments} - ${remainingInstallments(purchase)} pendientes`,
+          title: purchase.purchase,
+          meta: `${card.name} - Cuota ${installment}/${purchase.installments} - ${remainingInstallments(purchase)} pendientes`,
           amount: installmentAmount,
           payLabel: "Pagar",
           onPay: () => markCardInstallmentPaid(purchase.id),
@@ -286,11 +442,28 @@ function markCardInstallmentPaid(id) {
   render();
 }
 
-function cardTotalForMonth(month) {
+function getSelectedCard() {
+  return state.cards.find((card) => card.id === state.selectedCardId) ?? null;
+}
+
+function purchasesForCard(cardId) {
+  return state.cardPurchases.filter((purchase) => purchase.cardId === cardId);
+}
+
+function cardTotalForMonth(month, cardId = null) {
   return sum(
     state.cardPurchases
+      .filter((purchase) => (cardId ? purchase.cardId === cardId : true))
       .filter((purchase) => installmentNumberForMonth(purchase, month) !== null)
       .map((purchase) => purchase.amount / purchase.installments),
+  );
+}
+
+function cardPendingDebt(cardId) {
+  return sum(
+    purchasesForCard(cardId).map((purchase) => {
+      return (purchase.amount / purchase.installments) * remainingInstallments(purchase);
+    }),
   );
 }
 
@@ -359,4 +532,11 @@ function monthsBetween(startMonth, endMonth) {
   const [startYear, start] = startMonth.split("-").map(Number);
   const [endYear, end] = endMonth.split("-").map(Number);
   return (endYear - startYear) * 12 + (end - start);
+}
+
+function escapeHtml(value) {
+  return value.replace(/[&<>"']/g, (char) => {
+    const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
+    return entities[char];
+  });
 }

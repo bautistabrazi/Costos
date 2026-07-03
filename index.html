@@ -57,7 +57,10 @@
               <input name="date" type="date" required>
             </label>
             <label>Monto
-              <input name="amount" type="number" min="0" step="0.01" inputmode="decimal" required>
+              <span class="money-input">
+                <span>$</span>
+                <input name="amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required>
+              </span>
             </label>
           </div>
           <label>Descripcion
@@ -96,10 +99,22 @@
       </section>
 
       <section id="cards" class="panel">
-        <form id="cardForm" class="entry-form">
+        <form id="newCardForm" class="entry-form compact-form">
           <div class="form-row">
             <label>Tarjeta
-              <input name="cardName" type="text" maxlength="40" placeholder="Visa Galicia" required>
+              <input name="name" type="text" maxlength="40" placeholder="Visa Galicia, Mastercard MP..." required>
+            </label>
+            <button class="primary-action inline-action" type="submit">Agregar tarjeta</button>
+          </div>
+        </form>
+
+        <div id="cardPicker" class="card-picker"></div>
+        <div id="selectedCardSummary" class="card-detail"></div>
+
+        <form id="cardForm" class="entry-form">
+          <div class="form-row">
+            <label>Tarjeta destino
+              <select name="cardId" required></select>
             </label>
             <label>Fecha de compra
               <input name="purchaseDate" type="date" required>
@@ -110,7 +125,10 @@
           </label>
           <div class="form-row">
             <label>Monto total
-              <input name="amount" type="number" min="0" step="0.01" inputmode="decimal" required>
+              <span class="money-input">
+                <span>$</span>
+                <input name="amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required>
+              </span>
             </label>
             <label>Cuotas totales
               <input name="installments" type="number" min="1" step="1" inputmode="numeric" required>
