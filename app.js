@@ -1,17 +1,27 @@
-const STORAGE_KEY = "organizador-gastos-v2";
-const LEGACY_STORAGE_KEY = "organizador-gastos-v1";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+import { SUPABASE_CONFIG } from "./config.js";
 
-const state = loadState();
+const state = { dailyExpenses: [], cards: [], cardPurchases: [], selectedCardId: null };
 const money = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
   maximumFractionDigits: 0,
 });
 
+let supabaseClient = null;
+let currentUser = null;
+
 const monthFilter = document.querySelector("#monthFilter");
 const themeToggle = document.querySelector("#themeToggle");
 const themeIcon = document.querySelector("#themeIcon");
 const themeLabel = document.querySelector("#themeLabel");
+const authPanel = document.querySelector("#authPanel");
+const authForm = document.querySelector("#authForm");
+const authTitle = document.querySelector("#authTitle");
+const authMessage = document.querySelector("#authMessage");
+const sessionPanel = document.querySelector("#sessionPanel");
+const userEmail = document.querySelector("#userEmail");
+const signOutButton = document.querySelector("#signOutButton");
 const dailyForm = document.querySelector("#dailyForm");
 const newCardForm = document.querySelector("#newCardForm");
 const cardForm = document.querySelector("#cardForm");
@@ -29,7 +39,7 @@ if ("serviceWorker" in navigator) {
 
 init();
 
-function init() {
+async function init() {
   const today = new Date();
   const currentMonth = toMonthValue(today);
   applyTheme(localStorage.getItem("organizador-theme") ?? "light");
@@ -43,6 +53,8 @@ function init() {
   });
 
   themeToggle.addEventListener("click", toggleTheme);
+  authForm.addEventListener("submit", signInWithEmail);
+  signOutButton.addEventListener("click", signOut);
   monthFilter.addEventListener("change", render);
   dailyForm.addEventListener("submit", addDailyExpense);
   newCardForm.addEventListener("submit", addCard);
@@ -53,56 +65,142 @@ function init() {
     input.addEventListener("input", () => formatMoneyInput(input));
   });
 
+  setupSupabase();
   render();
 }
 
-function loadState() {
-  const raw = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_STORAGE_KEY);
-  const emptyState = { dailyExpenses: [], cards: [], cardPurchases: [], selectedCardId: null };
-  if (!raw) return emptyState;
-
-  try {
-    return migrateState(JSON.parse(raw));
-  } catch {
-    return emptyState;
+function setupSupabase() {
+  if (!isSupabaseConfigured()) {
+    setSignedOutUi("Falta configurar Supabase. Completa config.js con la URL y anon key del proyecto.");
+    setAppEnabled(false);
+    return;
   }
-}
 
-function migrateState(parsed) {
-  const migrated = {
-    dailyExpenses: parsed.dailyExpenses ?? [],
-    cards: parsed.cards ?? [],
-    cardPurchases: parsed.cardPurchases ?? [],
-    selectedCardId: parsed.selectedCardId ?? null,
-  };
+  supabaseClient = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+    },
+  });
 
-  migrated.cardPurchases.forEach((purchase) => {
-    if (purchase.cardId) return;
-
-    const legacyName = purchase.cardName?.trim();
-    if (!legacyName) return;
-
-    let card = migrated.cards.find((item) => item.name.toLowerCase() === legacyName.toLowerCase());
-    if (!card) {
-      card = { id: crypto.randomUUID(), name: legacyName };
-      migrated.cards.push(card);
+  supabaseClient.auth.onAuthStateChange((_event, session) => {
+    currentUser = session?.user ?? null;
+    if (currentUser) {
+      loadRemoteState();
+    } else {
+      resetState();
+      setSignedOutUi("Ingresa con tu email para sincronizar tus gastos.");
+      setAppEnabled(false);
+      render();
     }
-    purchase.cardId = card.id;
   });
 
-  migrated.cardPurchases.forEach((purchase) => {
-    delete purchase.cardName;
+  supabaseClient.auth.getSession().then(({ data }) => {
+    currentUser = data.session?.user ?? null;
+    if (currentUser) {
+      loadRemoteState();
+    } else {
+      setSignedOutUi("Ingresa con tu email para sincronizar tus gastos.");
+      setAppEnabled(false);
+    }
   });
-
-  if (!migrated.cards.some((card) => card.id === migrated.selectedCardId)) {
-    migrated.selectedCardId = migrated.cards[0]?.id ?? null;
-  }
-
-  return migrated;
 }
 
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+function isSupabaseConfigured() {
+  return Boolean(
+    SUPABASE_CONFIG.url &&
+      SUPABASE_CONFIG.anonKey &&
+      !SUPABASE_CONFIG.url.includes("TU-PROYECTO") &&
+      !SUPABASE_CONFIG.anonKey.includes("TU_SUPABASE"),
+  );
+}
+
+async function signInWithEmail(event) {
+  event.preventDefault();
+  if (!supabaseClient) return;
+
+  const email = new FormData(event.currentTarget).get("email").trim();
+  const redirectTo = window.location.href.split("#")[0];
+  const { error } = await supabaseClient.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: redirectTo },
+  });
+
+  authMessage.textContent = error
+    ? `No se pudo enviar el acceso: ${error.message}`
+    : "Te mande un link de acceso. Revisa tu email y volve desde ese enlace.";
+}
+
+async function signOut() {
+  if (!supabaseClient) return;
+  await supabaseClient.auth.signOut();
+}
+
+async function loadRemoteState() {
+  if (!currentUser) return;
+
+  setSignedInUi();
+  setAppEnabled(false);
+
+  const [cardsResult, dailyResult, purchasesResult] = await Promise.all([
+    supabaseClient.from("cards").select("*").order("created_at", { ascending: true }),
+    supabaseClient.from("daily_expenses").select("*").order("date", { ascending: false }),
+    supabaseClient.from("card_purchases").select("*").order("purchase_date", { ascending: false }),
+  ]);
+
+  const error = cardsResult.error ?? dailyResult.error ?? purchasesResult.error;
+  if (error) {
+    authMessage.textContent = `No se pudieron cargar los datos: ${error.message}`;
+    setAppEnabled(false);
+    return;
+  }
+
+  state.cards = cardsResult.data.map(mapCardFromDb);
+  state.dailyExpenses = dailyResult.data.map(mapDailyFromDb);
+  state.cardPurchases = purchasesResult.data.map(mapPurchaseFromDb);
+  if (!state.cards.some((card) => card.id === state.selectedCardId)) {
+    state.selectedCardId = state.cards[0]?.id ?? null;
+  }
+
+  setAppEnabled(true);
+  render();
+}
+
+function setSignedInUi() {
+  authPanel.classList.add("signed-in");
+  authTitle.textContent = "Sincronizado";
+  authMessage.textContent = "Tus datos se guardan en Supabase y se ven desde cualquier dispositivo.";
+  authForm.hidden = true;
+  sessionPanel.hidden = false;
+  userEmail.textContent = currentUser.email;
+}
+
+function setSignedOutUi(message) {
+  authPanel.classList.remove("signed-in");
+  authTitle.textContent = supabaseClient ? "Ingresar" : "Conecta Supabase";
+  authMessage.textContent = message;
+  authForm.hidden = !supabaseClient;
+  sessionPanel.hidden = true;
+  userEmail.textContent = "";
+}
+
+function setAppEnabled(enabled) {
+  [dailyForm, newCardForm].forEach((form) => {
+    form.classList.toggle("disabled", !enabled);
+    form.querySelectorAll("input, select, button").forEach((field) => {
+      field.disabled = !enabled;
+    });
+  });
+  document.querySelector("#clearDaily").disabled = !enabled;
+  setCardFormEnabled(enabled && state.cards.length > 0);
+}
+
+function resetState() {
+  state.dailyExpenses = [];
+  state.cards = [];
+  state.cardPurchases = [];
+  state.selectedCardId = null;
 }
 
 function toggleTheme() {
@@ -145,28 +243,33 @@ function setActiveTab(tabId) {
   });
 }
 
-function addDailyExpense(event) {
+async function addDailyExpense(event) {
   event.preventDefault();
+  if (!currentUser) return;
+
   const form = event.currentTarget;
   const data = new FormData(form);
-
-  state.dailyExpenses.push({
-    id: crypto.randomUUID(),
+  const payload = {
+    user_id: currentUser.id,
     date: data.get("date"),
     description: data.get("description").trim(),
     category: data.get("category"),
-    paymentMethod: data.get("paymentMethod"),
+    payment_method: data.get("paymentMethod"),
     amount: parseMoneyInput(data.get("amount")),
-  });
+  };
+  const { data: inserted, error } = await supabaseClient.from("daily_expenses").insert(payload).select().single();
+  if (error) return showError(error);
 
+  state.dailyExpenses.push(mapDailyFromDb(inserted));
   form.elements.description.value = "";
   form.elements.amount.value = "";
-  saveState();
   render();
 }
 
-function addCard(event) {
+async function addCard(event) {
   event.preventDefault();
+  if (!currentUser) return;
+
   const form = event.currentTarget;
   const name = new FormData(form).get("name").trim();
   if (!name) return;
@@ -178,16 +281,24 @@ function addCard(event) {
     return;
   }
 
-  const card = { id: crypto.randomUUID(), name };
+  const { data: inserted, error } = await supabaseClient
+    .from("cards")
+    .insert({ user_id: currentUser.id, name })
+    .select()
+    .single();
+  if (error) return showError(error);
+
+  const card = mapCardFromDb(inserted);
   state.cards.push(card);
   state.selectedCardId = card.id;
   form.reset();
-  saveState();
   render();
 }
 
-function addCardPurchase(event) {
+async function addCardPurchase(event) {
   event.preventDefault();
+  if (!currentUser) return;
+
   const form = event.currentTarget;
   const data = new FormData(form);
   const cardId = data.get("cardId");
@@ -196,43 +307,50 @@ function addCardPurchase(event) {
 
   if (!state.cards.some((card) => card.id === cardId)) return;
 
-  state.cardPurchases.push({
-    id: crypto.randomUUID(),
-    cardId,
-    purchaseDate: data.get("purchaseDate"),
+  const payload = {
+    user_id: currentUser.id,
+    card_id: cardId,
+    purchase_date: data.get("purchaseDate"),
     purchase: data.get("purchase").trim(),
     amount: parseMoneyInput(data.get("amount")),
     installments,
-    paidInstallments,
-    firstDueMonth: data.get("firstDueMonth"),
-  });
+    paid_installments: paidInstallments,
+    first_due_month: data.get("firstDueMonth"),
+  };
 
+  const { data: inserted, error } = await supabaseClient.from("card_purchases").insert(payload).select().single();
+  if (error) return showError(error);
+
+  state.cardPurchases.push(mapPurchaseFromDb(inserted));
   state.selectedCardId = cardId;
   form.elements.purchase.value = "";
   form.elements.amount.value = "";
   form.elements.installments.value = "";
   form.elements.paidInstallments.value = "0";
-  saveState();
   render();
 }
 
 function selectCard(cardId) {
   if (!state.cards.some((card) => card.id === cardId)) return;
   state.selectedCardId = cardId;
-  saveState();
   render();
 }
 
-function clearDailyMonth() {
-  const selectedMonth = monthFilter.value;
-  const count = state.dailyExpenses.filter((expense) => toMonthFromDate(expense.date) === selectedMonth).length;
-  if (!count) return;
+async function clearDailyMonth() {
+  if (!currentUser) return;
 
-  const confirmed = confirm(`Se van a borrar ${count} gastos diarios de ${formatMonth(selectedMonth)}.`);
+  const selectedMonth = monthFilter.value;
+  const monthItems = state.dailyExpenses.filter((expense) => toMonthFromDate(expense.date) === selectedMonth);
+  if (!monthItems.length) return;
+
+  const confirmed = confirm(`Se van a borrar ${monthItems.length} gastos diarios de ${formatMonth(selectedMonth)}.`);
   if (!confirmed) return;
 
-  state.dailyExpenses = state.dailyExpenses.filter((expense) => toMonthFromDate(expense.date) !== selectedMonth);
-  saveState();
+  const ids = monthItems.map((expense) => expense.id);
+  const { error } = await supabaseClient.from("daily_expenses").delete().in("id", ids);
+  if (error) return showError(error);
+
+  state.dailyExpenses = state.dailyExpenses.filter((expense) => !ids.includes(expense.id));
   render();
 }
 
@@ -281,7 +399,7 @@ function renderCardControls(selectedMonth) {
   renderCardPicker(selectedMonth);
   renderCardSelect();
   renderSelectedCardSummary(selectedMonth);
-  setCardFormEnabled(state.cards.length > 0);
+  setCardFormEnabled(Boolean(currentUser) && state.cards.length > 0);
 }
 
 function renderCardPicker(selectedMonth) {
@@ -460,25 +578,41 @@ function appendEmpty(container) {
   container.append(emptyTemplate.content.cloneNode(true));
 }
 
-function deleteDailyExpense(id) {
+async function deleteDailyExpense(id) {
+  const { error } = await supabaseClient.from("daily_expenses").delete().eq("id", id);
+  if (error) return showError(error);
+
   state.dailyExpenses = state.dailyExpenses.filter((expense) => expense.id !== id);
-  saveState();
   render();
 }
 
-function deleteCardPurchase(id) {
+async function deleteCardPurchase(id) {
+  const { error } = await supabaseClient.from("card_purchases").delete().eq("id", id);
+  if (error) return showError(error);
+
   state.cardPurchases = state.cardPurchases.filter((purchase) => purchase.id !== id);
-  saveState();
   render();
 }
 
-function markCardInstallmentPaid(id) {
+async function markCardInstallmentPaid(id) {
   const purchase = state.cardPurchases.find((item) => item.id === id);
   if (!purchase) return;
 
-  purchase.paidInstallments = Math.min(purchase.paidInstallments + 1, purchase.installments);
-  saveState();
+  const paidInstallments = Math.min(purchase.paidInstallments + 1, purchase.installments);
+  const { data: updated, error } = await supabaseClient
+    .from("card_purchases")
+    .update({ paid_installments: paidInstallments })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) return showError(error);
+
+  Object.assign(purchase, mapPurchaseFromDb(updated));
   render();
+}
+
+function showError(error) {
+  authMessage.textContent = `Error: ${error.message}`;
 }
 
 function getSelectedCard() {
@@ -517,6 +651,34 @@ function installmentNumberForMonth(purchase, month) {
 
 function remainingInstallments(purchase) {
   return Math.max(purchase.installments - purchase.paidInstallments, 0);
+}
+
+function mapCardFromDb(row) {
+  return { id: row.id, name: row.name };
+}
+
+function mapDailyFromDb(row) {
+  return {
+    id: row.id,
+    date: row.date,
+    description: row.description,
+    category: row.category,
+    paymentMethod: row.payment_method,
+    amount: Number(row.amount),
+  };
+}
+
+function mapPurchaseFromDb(row) {
+  return {
+    id: row.id,
+    cardId: row.card_id,
+    purchaseDate: row.purchase_date,
+    purchase: row.purchase,
+    amount: Number(row.amount),
+    installments: Number(row.installments),
+    paidInstallments: Number(row.paid_installments),
+    firstDueMonth: row.first_due_month,
+  };
 }
 
 function sum(values) {

@@ -27,6 +27,24 @@
         </div>
       </header>
 
+      <section id="authPanel" class="auth-panel">
+        <div>
+          <p class="eyebrow">Cuenta</p>
+          <h2 id="authTitle">Conecta Supabase</h2>
+          <p id="authMessage" class="auth-message">Configura Supabase para guardar tus gastos en la nube.</p>
+        </div>
+        <form id="authForm" class="auth-form">
+          <label>Email
+            <input name="email" type="email" autocomplete="email" placeholder="tu@email.com" required>
+          </label>
+          <button class="primary-action" type="submit">Enviar acceso</button>
+        </form>
+        <div id="sessionPanel" class="session-panel" hidden>
+          <span id="userEmail"></span>
+          <button id="signOutButton" class="ghost-action" type="button">Salir</button>
+        </div>
+      </section>
+
       <section class="hero-summary" aria-label="Resumen mensual">
         <article class="total-card">
           <span>Total estimado</span>
@@ -174,6 +192,6 @@
       </div>
     </template>
 
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
   </body>
 </html>

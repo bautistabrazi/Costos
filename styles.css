@@ -245,6 +245,67 @@ h2 {
   margin-bottom: 16px;
 }
 
+.auth-panel {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 16px;
+  border: 1px solid var(--soft-border);
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.auth-panel.signed-in {
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--soft-border));
+}
+
+.auth-message {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.96rem;
+  line-height: 1.4;
+}
+
+.auth-form {
+  display: grid;
+  grid-template-columns: minmax(210px, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.auth-form label {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 580;
+}
+
+.auth-form input {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 6px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--field);
+  color: var(--ink);
+  padding: 10px 12px;
+  outline: none;
+}
+
+.session-panel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.session-panel span {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
 .total-card,
 .summary-card,
 .entry-form,
@@ -682,6 +743,15 @@ h2 {
 
   .summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .auth-panel,
+  .auth-form {
+    grid-template-columns: 1fr;
+  }
+
+  .session-panel {
+    justify-content: space-between;
   }
 
   .form-row {

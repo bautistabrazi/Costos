@@ -1,6 +1,6 @@
 # Organizador de gastos
 
-App local para registrar gastos diarios, compras con tarjeta en cuotas y ver resumen mensual/proyeccion.
+App para registrar gastos diarios, compras con tarjeta en cuotas y ver resumen mensual/proyeccion con sincronizacion en Supabase.
 
 ## Como usar
 
@@ -13,7 +13,17 @@ App local para registrar gastos diarios, compras con tarjeta en cuotas y ver res
 7. Revisar la pestana `Proyeccion` para ver los proximos 12 meses.
 8. Cambiar entre tema claro y oscuro desde el boton superior.
 
-Los datos se guardan en el navegador usando `localStorage`.
+Los datos se guardan en Supabase cuando `config.js` tiene la URL y anon key del proyecto.
+
+## Supabase
+
+Para sincronizar entre dispositivos:
+
+1. Crear un proyecto en Supabase.
+2. Ejecutar `supabase-schema.sql` en el SQL Editor del proyecto.
+3. Copiar `config.example.js` a `config.js`.
+4. Completar `url` y `anonKey` con los datos del proyecto.
+5. En Supabase Auth, agregar la URL de Vercel como redirect URL permitida.
 
 ## Proximos pasos posibles
 
