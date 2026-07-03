@@ -30,14 +30,21 @@
       <section id="authPanel" class="auth-panel">
         <div>
           <p class="eyebrow">Cuenta</p>
-          <h2 id="authTitle">Ingresar o crear cuenta</h2>
-          <p id="authMessage" class="auth-message">Ingresa con tu correo para sincronizar tus gastos entre dispositivos.</p>
+          <h2 id="authTitle">Iniciar sesion</h2>
+          <p id="authMessage" class="auth-message">Ingresa con tu correo y contrasena para acceder a tus gastos.</p>
+        </div>
+        <div id="authSwitch" class="auth-switch" role="tablist" aria-label="Modo de acceso">
+          <button id="loginModeButton" class="auth-switch-button active" type="button">Iniciar sesion</button>
+          <button id="signupModeButton" class="auth-switch-button" type="button">Crear cuenta</button>
         </div>
         <form id="authForm" class="auth-form">
           <label>Correo electronico
             <input name="email" type="email" autocomplete="email" placeholder="tu@email.com" required>
           </label>
-          <button class="primary-action" type="submit">Enviar acceso</button>
+          <label>Contrasena
+            <input name="password" type="password" autocomplete="current-password" minlength="6" placeholder="Minimo 6 caracteres" required>
+          </label>
+          <button id="authSubmitButton" class="primary-action" type="submit">Ingresar</button>
         </form>
         <div id="sessionPanel" class="session-panel" hidden>
           <span id="userEmail"></span>

@@ -10,6 +10,7 @@ const money = new Intl.NumberFormat("es-AR", {
 
 let supabaseClient = null;
 let currentUser = null;
+let authMode = "login";
 
 const monthFilter = document.querySelector("#monthFilter");
 const themeToggle = document.querySelector("#themeToggle");
@@ -19,6 +20,10 @@ const authPanel = document.querySelector("#authPanel");
 const authForm = document.querySelector("#authForm");
 const authTitle = document.querySelector("#authTitle");
 const authMessage = document.querySelector("#authMessage");
+const authSwitch = document.querySelector("#authSwitch");
+const loginModeButton = document.querySelector("#loginModeButton");
+const signupModeButton = document.querySelector("#signupModeButton");
+const authSubmitButton = document.querySelector("#authSubmitButton");
 const sessionPanel = document.querySelector("#sessionPanel");
 const userEmail = document.querySelector("#userEmail");
 const signOutButton = document.querySelector("#signOutButton");
@@ -54,7 +59,9 @@ async function init() {
   });
 
   themeToggle.addEventListener("click", toggleTheme);
-  authForm.addEventListener("submit", signInWithEmail);
+  loginModeButton.addEventListener("click", () => setAuthMode("login"));
+  signupModeButton.addEventListener("click", () => setAuthMode("signup"));
+  authForm.addEventListener("submit", submitAuthForm);
   signOutButton.addEventListener("click", signOut);
   monthFilter.addEventListener("change", render);
   dailyForm.addEventListener("submit", addDailyExpense);
@@ -91,7 +98,7 @@ function setupSupabase() {
       loadRemoteState();
     } else {
       resetState();
-      setSignedOutUi("Ingresa con tu email para sincronizar tus gastos.");
+      setSignedOutUi("Ingresa con tu correo y contrasena para sincronizar tus gastos.");
       setAppEnabled(false);
       render();
     }
@@ -102,7 +109,7 @@ function setupSupabase() {
     if (currentUser) {
       loadRemoteState();
     } else {
-      setSignedOutUi("Ingresa con tu email para sincronizar tus gastos.");
+      setSignedOutUi("Ingresa con tu correo y contrasena para sincronizar tus gastos.");
       setAppEnabled(false);
     }
   });
@@ -117,20 +124,32 @@ function isSupabaseConfigured() {
   );
 }
 
-async function signInWithEmail(event) {
+async function submitAuthForm(event) {
   event.preventDefault();
   if (!supabaseClient) return;
 
-  const email = new FormData(event.currentTarget).get("email").trim();
+  const formData = new FormData(event.currentTarget);
+  const email = formData.get("email").trim();
+  const password = formData.get("password");
   const redirectTo = window.location.href.split("#")[0];
-  const { error } = await supabaseClient.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: redirectTo },
-  });
+  const { error } =
+    authMode === "signup"
+      ? await supabaseClient.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: redirectTo },
+        })
+      : await supabaseClient.auth.signInWithPassword({ email, password });
 
-  authMessage.textContent = error
-    ? getAuthErrorMessage(error)
-    : "Te enviamos un enlace de acceso. Revisa tu correo electronico y volve a ingresar desde ese enlace.";
+  if (error) {
+    authMessage.textContent = getAuthErrorMessage(error);
+    return;
+  }
+
+  authMessage.textContent =
+    authMode === "signup"
+      ? "Cuenta creada. Si Supabase solicita confirmacion, revisa tu correo antes de iniciar sesion."
+      : "Ingreso correcto. Cargando tus datos...";
 }
 
 async function signOut() {
@@ -173,6 +192,7 @@ function setSignedInUi() {
   authTitle.textContent = "Sincronizado";
   authMessage.textContent = "Tus datos se guardan en Supabase y se ven desde cualquier dispositivo.";
   authForm.hidden = true;
+  authSwitch.hidden = true;
   sessionPanel.hidden = false;
   userEmail.textContent = currentUser.email;
   appContent.hidden = false;
@@ -181,13 +201,31 @@ function setSignedInUi() {
 
 function setSignedOutUi(message) {
   authPanel.classList.remove("signed-in");
-  authTitle.textContent = supabaseClient ? "Ingresar o crear cuenta" : "Conecta Supabase";
+  if (supabaseClient) {
+    setAuthMode(authMode);
+  } else {
+    authTitle.textContent = "Conecta Supabase";
+  }
   authMessage.textContent = message;
   authForm.hidden = !supabaseClient;
+  authSwitch.hidden = !supabaseClient;
   sessionPanel.hidden = true;
   userEmail.textContent = "";
   appContent.hidden = true;
   monthFilter.closest(".month-picker").hidden = true;
+}
+
+function setAuthMode(mode) {
+  authMode = mode;
+  const isSignup = authMode === "signup";
+  authTitle.textContent = isSignup ? "Crear cuenta" : "Iniciar sesion";
+  authSubmitButton.textContent = isSignup ? "Crear cuenta" : "Ingresar";
+  loginModeButton.classList.toggle("active", !isSignup);
+  signupModeButton.classList.toggle("active", isSignup);
+  authForm.elements.password.autocomplete = isSignup ? "new-password" : "current-password";
+  authMessage.textContent = isSignup
+    ? "Crea una cuenta con correo y contrasena para guardar tus datos en la nube."
+    : "Ingresa con tu correo y contrasena para acceder a tus gastos.";
 }
 
 function setAppEnabled(enabled) {
@@ -622,12 +660,29 @@ function showError(error) {
 
 function getAuthErrorMessage(error) {
   const message = error.message ?? "";
+  const normalized = message.toLowerCase();
   if (message.includes("only request this after")) {
     const seconds = message.match(/\d+/)?.[0] ?? "unos";
     return `Por seguridad, espera ${seconds} segundos antes de solicitar otro enlace de acceso.`;
   }
 
-  return `No se pudo enviar el acceso: ${message}`;
+  if (normalized.includes("invalid login credentials")) {
+    return "El correo o la contrasena no son correctos.";
+  }
+
+  if (normalized.includes("user already registered") || normalized.includes("already registered")) {
+    return "Ya existe una cuenta con ese correo. Usa Iniciar sesion.";
+  }
+
+  if (normalized.includes("password")) {
+    return "La contrasena no cumple los requisitos. Usa al menos 6 caracteres.";
+  }
+
+  if (normalized.includes("email")) {
+    return "Revisa que el correo electronico este escrito correctamente.";
+  }
+
+  return `No se pudo completar la operacion: ${message}`;
 }
 
 function getSelectedCard() {
