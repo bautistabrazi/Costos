@@ -310,6 +310,11 @@ body:has(.app-content[hidden]) .auth-panel {
   font-weight: 620;
 }
 
+.auth-switch-button:disabled {
+  cursor: wait;
+  opacity: 0.74;
+}
+
 .auth-switch-button.active {
   background: var(--ink);
   color: var(--bg);
@@ -624,6 +629,15 @@ body:has(.app-content[hidden]) .auth-form .primary-action {
 
 .primary-action:hover {
   background: var(--primary-dark);
+}
+
+.primary-action:disabled,
+.ghost-action:disabled,
+.icon-action:disabled,
+.pay-action:disabled {
+  cursor: wait;
+  opacity: 0.68;
+  transform: none;
 }
 
 .ghost-action {

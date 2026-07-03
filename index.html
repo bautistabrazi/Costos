@@ -31,13 +31,13 @@
         <div>
           <p class="eyebrow">Cuenta</p>
           <h2 id="authTitle">Iniciar sesion</h2>
-          <p id="authMessage" class="auth-message">Ingresa con tu correo y contrasena para acceder a tus gastos.</p>
+          <p id="authMessage" class="auth-message" aria-live="polite">Ingresa con tu correo y contrasena para acceder a tus gastos.</p>
         </div>
         <div id="authSwitch" class="auth-switch" role="tablist" aria-label="Modo de acceso">
           <button id="loginModeButton" class="auth-switch-button active" type="button">Iniciar sesion</button>
           <button id="signupModeButton" class="auth-switch-button" type="button">Crear cuenta</button>
         </div>
-        <form id="authForm" class="auth-form">
+        <form id="authForm" class="auth-form" novalidate>
           <label>Correo electronico
             <input name="email" type="email" autocomplete="email" placeholder="tu@email.com" required>
           </label>

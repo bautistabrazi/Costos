@@ -1,4 +1,4 @@
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 import { SUPABASE_CONFIG } from "./config.js";
 
 const state = { dailyExpenses: [], cards: [], cardPurchases: [], selectedCardId: null };
@@ -11,6 +11,7 @@ const money = new Intl.NumberFormat("es-AR", {
 let supabaseClient = null;
 let currentUser = null;
 let authMode = "login";
+let authBusy = false;
 
 const monthFilter = document.querySelector("#monthFilter");
 const themeToggle = document.querySelector("#themeToggle");
@@ -126,30 +127,53 @@ function isSupabaseConfigured() {
 
 async function submitAuthForm(event) {
   event.preventDefault();
-  if (!supabaseClient) return;
+  if (authBusy) return;
+  if (!supabaseClient) {
+    authMessage.textContent = "Supabase todavia no esta conectado. Revisa la configuracion del proyecto.";
+    return;
+  }
 
   const formData = new FormData(event.currentTarget);
   const email = formData.get("email").trim();
   const password = formData.get("password");
-  const redirectTo = window.location.href.split("#")[0];
-  const { error } =
-    authMode === "signup"
-      ? await supabaseClient.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: redirectTo },
-        })
-      : await supabaseClient.auth.signInWithPassword({ email, password });
-
-  if (error) {
-    authMessage.textContent = getAuthErrorMessage(error);
+  if (!email || !password) {
+    authMessage.textContent = "Completa tu correo y contrasena para continuar.";
     return;
   }
 
-  authMessage.textContent =
-    authMode === "signup"
-      ? "Cuenta creada. Si Supabase solicita confirmacion, revisa tu correo antes de iniciar sesion."
-      : "Ingreso correcto. Cargando tus datos...";
+  if (password.length < 6) {
+    authMessage.textContent = "La contrasena debe tener al menos 6 caracteres.";
+    return;
+  }
+
+  const redirectTo = window.location.href.split("#")[0];
+  setAuthBusy(true);
+  authMessage.textContent = authMode === "signup" ? "Creando tu cuenta..." : "Ingresando a tu cuenta...";
+
+  try {
+    const { data, error } =
+      authMode === "signup"
+        ? await supabaseClient.auth.signUp({
+            email,
+            password,
+            options: { emailRedirectTo: redirectTo },
+          })
+        : await supabaseClient.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      authMessage.textContent = getAuthErrorMessage(error);
+      return;
+    }
+
+    authMessage.textContent =
+      authMode === "signup" && !data.session
+        ? "Cuenta creada. Revisa tu correo para confirmarla y luego inicia sesion."
+        : "Ingreso correcto. Cargando tus datos...";
+  } catch (error) {
+    authMessage.textContent = `No se pudo conectar con Supabase: ${error.message}`;
+  } finally {
+    setAuthBusy(false);
+  }
 }
 
 async function signOut() {
@@ -216,16 +240,36 @@ function setSignedOutUi(message) {
 }
 
 function setAuthMode(mode) {
+  if (authBusy) return;
   authMode = mode;
   const isSignup = authMode === "signup";
   authTitle.textContent = isSignup ? "Crear cuenta" : "Iniciar sesion";
-  authSubmitButton.textContent = isSignup ? "Crear cuenta" : "Ingresar";
+  updateAuthButtonText();
   loginModeButton.classList.toggle("active", !isSignup);
   signupModeButton.classList.toggle("active", isSignup);
+  loginModeButton.setAttribute("aria-selected", String(!isSignup));
+  signupModeButton.setAttribute("aria-selected", String(isSignup));
   authForm.elements.password.autocomplete = isSignup ? "new-password" : "current-password";
   authMessage.textContent = isSignup
     ? "Crea una cuenta con correo y contrasena para guardar tus datos en la nube."
     : "Ingresa con tu correo y contrasena para acceder a tus gastos.";
+}
+
+function setAuthBusy(isBusy) {
+  authBusy = isBusy;
+  authSubmitButton.disabled = isBusy;
+  loginModeButton.disabled = isBusy;
+  signupModeButton.disabled = isBusy;
+  updateAuthButtonText();
+}
+
+function updateAuthButtonText() {
+  if (authBusy) {
+    authSubmitButton.textContent = authMode === "signup" ? "Creando cuenta..." : "Ingresando...";
+    return;
+  }
+
+  authSubmitButton.textContent = authMode === "signup" ? "Crear cuenta" : "Ingresar";
 }
 
 function setAppEnabled(enabled) {
