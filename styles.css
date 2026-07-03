@@ -1,59 +1,59 @@
 :root {
   color-scheme: light;
-  --bg: #f7f8fb;
-  --page-start: #fdfbff;
-  --page-end: #eef5f7;
-  --surface: rgba(255, 255, 255, 0.9);
+  --bg: #f4f7f8;
+  --page-start: #f8fbfc;
+  --page-end: #eef3f5;
+  --surface: #ffffff;
   --surface-strong: #ffffff;
-  --field: #f8fafc;
-  --card-muted: #eef7f5;
-  --ink: #17201d;
-  --muted: #66736f;
-  --line: #dce7e5;
-  --box-border: #111816;
-  --primary: #176b73;
-  --primary-dark: #0f5058;
-  --primary-soft: #e3f5f3;
-  --accent: #c06b42;
-  --accent-soft: #fff1e9;
-  --danger: #c84f47;
-  --danger-soft: #fff0ee;
-  --hero-a: #176b73;
-  --hero-b: #c06b42;
-  --focus: rgba(23, 107, 115, 0.18);
-  --soft-border: rgba(220, 231, 229, 0.9);
-  --button-shadow: rgba(24, 41, 38, 0.08);
-  --primary-shadow: rgba(23, 107, 115, 0.22);
-  --shadow: 0 20px 55px rgba(24, 41, 38, 0.1);
+  --field: #f7f9fa;
+  --card-muted: #f1f6f6;
+  --ink: #14201f;
+  --muted: #63706f;
+  --line: #dce5e6;
+  --box-border: #d5e0e1;
+  --primary: #075f63;
+  --primary-dark: #04474b;
+  --primary-soft: #e4f3f2;
+  --accent: #2d7ff9;
+  --accent-soft: #eaf2ff;
+  --danger: #b4433d;
+  --danger-soft: #fff1ef;
+  --hero-a: #054f55;
+  --hero-b: #087a76;
+  --focus: rgba(45, 127, 249, 0.18);
+  --soft-border: rgba(213, 224, 225, 0.9);
+  --button-shadow: rgba(15, 36, 38, 0.06);
+  --primary-shadow: rgba(7, 95, 99, 0.18);
+  --shadow: 0 12px 32px rgba(15, 36, 38, 0.08);
 }
 
 html[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #101716;
-  --page-start: #182422;
-  --page-end: #0b1010;
-  --surface: rgba(22, 32, 30, 0.91);
-  --surface-strong: #1f2d2b;
-  --field: #121c1b;
-  --card-muted: #172724;
-  --ink: #eff7f4;
-  --muted: #a8b8b3;
-  --line: #2b3e3b;
-  --box-border: #f3fbf8;
-  --primary: #75d0c4;
-  --primary-dark: #9be3da;
-  --primary-soft: #173836;
-  --accent: #f0a36d;
-  --accent-soft: #382216;
+  --bg: #0f171a;
+  --page-start: #121f23;
+  --page-end: #0a1012;
+  --surface: #172225;
+  --surface-strong: #1d2a2e;
+  --field: #101a1d;
+  --card-muted: #132326;
+  --ink: #edf6f6;
+  --muted: #9fb2b4;
+  --line: #26383d;
+  --box-border: #2b4147;
+  --primary: #75d7d2;
+  --primary-dark: #a2ebe7;
+  --primary-soft: #173a3d;
+  --accent: #7db4ff;
+  --accent-soft: #152844;
   --danger: #f08f87;
   --danger-soft: #3a211f;
-  --hero-a: #1a797d;
-  --hero-b: #b9663b;
-  --focus: rgba(117, 208, 196, 0.2);
-  --soft-border: rgba(43, 62, 59, 0.95);
+  --hero-a: #0a4f56;
+  --hero-b: #0b7d79;
+  --focus: rgba(125, 180, 255, 0.2);
+  --soft-border: rgba(43, 65, 71, 0.95);
   --button-shadow: rgba(0, 0, 0, 0.22);
-  --primary-shadow: rgba(117, 208, 196, 0.15);
-  --shadow: 0 18px 50px rgba(0, 0, 0, 0.32);
+  --primary-shadow: rgba(117, 215, 210, 0.14);
+  --shadow: 0 16px 42px rgba(0, 0, 0, 0.32);
 }
 
 * {
@@ -64,8 +64,6 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(circle at 12% 6%, color-mix(in srgb, var(--primary) 17%, transparent), transparent 26rem),
-    radial-gradient(circle at 86% 12%, color-mix(in srgb, var(--accent) 13%, transparent), transparent 24rem),
     linear-gradient(180deg, var(--page-start) 0%, var(--bg) 48%, var(--page-end) 100%);
   color: var(--ink);
   font-family: "Inter", "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, ui-sans-serif, system-ui, sans-serif;
@@ -92,7 +90,7 @@ p {
 .app-shell {
   width: min(1120px, 100%);
   margin: 0 auto;
-  padding: 22px clamp(14px, 4vw, 32px) 34px;
+  padding: 18px clamp(14px, 4vw, 32px) 34px;
 }
 
 .app-content[hidden],
@@ -124,7 +122,12 @@ body:has(.app-content[hidden]) .header-actions {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--box-border);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  box-shadow: 0 10px 30px var(--button-shadow);
 }
 
 .header-actions {
@@ -138,7 +141,7 @@ body:has(.app-content[hidden]) .header-actions {
   place-items: center;
   min-height: 48px;
   width: 48px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--box-border);
   border-radius: 999px;
   background: var(--surface);
   color: var(--ink);
@@ -146,7 +149,7 @@ body:has(.app-content[hidden]) .header-actions {
   cursor: pointer;
   font-size: 0.95rem;
   font-weight: 560;
-  box-shadow: 0 10px 30px var(--button-shadow);
+  box-shadow: none;
 }
 
 .theme-icon {
@@ -163,16 +166,16 @@ body:has(.app-content[hidden]) .header-actions {
 
 .eyebrow {
   margin: 0 0 2px;
-  color: var(--primary);
-  font-size: 0.84rem;
-  font-weight: 650;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
   letter-spacing: 0;
   text-transform: uppercase;
 }
 
 h1 {
-  font-size: clamp(1.9rem, 5vw, 3.05rem);
-  font-weight: 650;
+  font-size: clamp(1.65rem, 4vw, 2.45rem);
+  font-weight: 680;
   line-height: 1.05;
   letter-spacing: 0;
 }
@@ -196,9 +199,9 @@ h2 {
   min-width: 168px;
   padding: 10px;
   border: 1px solid var(--box-border);
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--surface);
-  box-shadow: 0 10px 30px var(--button-shadow);
+  box-shadow: none;
 }
 
 .month-picker label,
@@ -215,7 +218,7 @@ h2 {
   min-height: 46px;
   margin-top: 6px;
   border: 1px solid var(--box-border);
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--field);
   color: var(--ink);
   padding: 10px 12px;
@@ -230,7 +233,7 @@ h2 {
   min-height: 46px;
   margin-top: 6px;
   border: 1px solid var(--box-border);
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--field);
   transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
 }
@@ -275,9 +278,9 @@ h2 {
 
 .hero-summary {
   display: grid;
-  grid-template-columns: minmax(280px, 1.2fr) minmax(320px, 1fr);
-  gap: 14px;
-  margin-bottom: 16px;
+  grid-template-columns: minmax(280px, 1.15fr) minmax(320px, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
 }
 
 .auth-panel {
@@ -290,10 +293,9 @@ h2 {
   margin-bottom: 16px;
   padding: clamp(24px, 5vw, 36px);
   border: 1px solid var(--box-border);
-  border-radius: 26px;
+  border-radius: 22px;
   background: var(--surface);
-  box-shadow: 0 24px 80px rgba(24, 41, 38, 0.16);
-  backdrop-filter: blur(18px);
+  box-shadow: var(--shadow);
   text-align: center;
 }
 
@@ -334,14 +336,14 @@ body:has(.app-content[hidden]) .auth-panel {
   gap: 6px;
   padding: 6px;
   border: 1px solid var(--box-border);
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--field);
 }
 
 .auth-switch-button {
   min-height: 46px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 12px;
   background: transparent;
   color: var(--muted);
   cursor: pointer;
@@ -354,9 +356,9 @@ body:has(.app-content[hidden]) .auth-panel {
 }
 
 .auth-switch-button.active {
-  background: var(--ink);
-  color: var(--bg);
-  box-shadow: 0 10px 24px var(--button-shadow);
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 8px 18px var(--primary-shadow);
 }
 
 .auth-form {
@@ -384,7 +386,7 @@ body:has(.app-content[hidden]) .auth-panel {
   min-height: 54px;
   margin-top: 8px;
   border: 1px solid var(--box-border);
-  border-radius: 16px;
+  border-radius: 12px;
   background: var(--field);
   color: var(--ink);
   padding: 12px 14px;
@@ -435,43 +437,50 @@ body:has(.app-content[hidden]) .auth-panel {
   border: 1px solid var(--box-border);
   background: var(--surface);
   box-shadow: var(--shadow);
-  backdrop-filter: blur(18px);
 }
 
 .total-card {
   position: relative;
   overflow: hidden;
   display: grid;
-  align-content: space-between;
-  min-height: 172px;
-  padding: 20px;
-  border-radius: 20px;
-  background: linear-gradient(180deg, var(--surface-strong), var(--surface));
-  color: var(--ink);
+  align-content: end;
+  min-height: 182px;
+  padding: 22px;
+  border: 0;
+  border-radius: 22px;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--hero-a) 96%, transparent), color-mix(in srgb, var(--hero-b) 92%, transparent)),
+    var(--primary);
+  color: #ffffff;
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--primary) 18%, transparent);
 }
 
 .total-card::after {
   content: "";
   position: absolute;
-  inset: 0 0 auto;
-  height: 6px;
-  background: linear-gradient(90deg, var(--primary), var(--accent));
+  right: 18px;
+  top: 18px;
+  width: 52px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .total-card span,
 .total-card small {
   position: relative;
   z-index: 1;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.76);
   font-weight: 560;
 }
 
 .total-card strong {
   position: relative;
   z-index: 1;
-  margin: 18px 0 6px;
-  color: var(--ink);
-  font-size: clamp(2rem, 7vw, 3.25rem);
+  margin: 10px 0 8px;
+  color: #ffffff;
+  font-size: clamp(2.05rem, 7vw, 3.45rem);
   font-weight: 720;
   line-height: 1;
 }
@@ -487,9 +496,9 @@ body:has(.app-content[hidden]) .auth-panel {
   grid-template-columns: 1fr auto;
   gap: 12px;
   align-items: center;
-  min-height: 56px;
+  min-height: 62px;
   padding: 16px;
-  border-radius: 18px;
+  border-radius: 16px;
 }
 
 .summary-card span {
@@ -509,11 +518,11 @@ body:has(.app-content[hidden]) .auth-panel {
   z-index: 10;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
+  gap: 6px;
   margin-bottom: 16px;
-  padding: 5px;
+  padding: 6px;
   border: 1px solid var(--box-border);
-  border-radius: 20px;
+  border-radius: 18px;
   background: var(--surface);
   box-shadow: 0 12px 30px var(--button-shadow);
   backdrop-filter: blur(16px);
@@ -526,7 +535,7 @@ body:has(.app-content[hidden]) .auth-panel {
 .pay-action {
   min-height: 44px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 12px;
   cursor: pointer;
   font-weight: 620;
 }
@@ -537,9 +546,9 @@ body:has(.app-content[hidden]) .auth-panel {
 }
 
 .tab.active {
-  background: var(--ink);
-  color: var(--bg);
-  box-shadow: 0 10px 24px var(--button-shadow);
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 8px 20px var(--primary-shadow);
 }
 
 .panel {
@@ -555,7 +564,7 @@ body:has(.app-content[hidden]) .auth-panel {
   gap: 12px;
   margin-bottom: 24px;
   padding: 16px;
-  border-radius: 20px;
+  border-radius: 18px;
 }
 
 .compact-form {
@@ -594,13 +603,13 @@ body:has(.app-content[hidden]) .auth-panel {
   gap: 2px;
   min-width: max-content;
   border: 1px solid var(--box-border);
-  border-radius: 16px;
+  border-radius: 14px;
   background: var(--surface);
   color: var(--ink);
   padding: 10px 13px;
   cursor: pointer;
   font-weight: 620;
-  box-shadow: 0 10px 28px var(--button-shadow);
+  box-shadow: none;
 }
 
 .card-pill span {
@@ -611,8 +620,8 @@ body:has(.app-content[hidden]) .auth-panel {
 
 .card-pill.active {
   border-color: var(--primary);
-  background: var(--ink);
-  color: var(--bg);
+  background: var(--primary);
+  color: #ffffff;
 }
 
 .card-pill.active span {
@@ -630,10 +639,9 @@ body:has(.app-content[hidden]) .auth-panel {
   gap: 14px;
   padding: 16px;
   border: 1px solid var(--box-border);
-  border-radius: 20px;
+  border-radius: 18px;
   background: var(--surface);
   box-shadow: var(--shadow);
-  backdrop-filter: blur(18px);
 }
 
 .card-detail-title {
@@ -673,8 +681,8 @@ body:has(.app-content[hidden]) .auth-panel {
 }
 
 .primary-action {
-  min-height: 54px;
-  background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 70%, var(--accent)));
+  min-height: 50px;
+  background: var(--primary);
   color: #ffffff;
   box-shadow: 0 14px 28px var(--primary-shadow);
   transition: transform 150ms ease, background 150ms ease;
@@ -688,7 +696,7 @@ body:has(.app-content[hidden]) .auth-panel {
 }
 
 .primary-action:hover {
-  background: linear-gradient(135deg, var(--primary-dark), color-mix(in srgb, var(--primary-dark) 70%, var(--accent)));
+  background: var(--primary-dark);
 }
 
 .primary-action:disabled,
@@ -702,7 +710,7 @@ body:has(.app-content[hidden]) .auth-panel {
 
 .ghost-action {
   min-height: 40px;
-  border: 1px solid color-mix(in srgb, var(--danger) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
   background: var(--danger-soft);
   color: var(--danger);
   padding: 0 12px;
@@ -739,8 +747,8 @@ body:has(.app-content[hidden]) .auth-panel {
   gap: 12px;
   align-items: center;
   padding: 15px;
-  border-radius: 20px;
-  box-shadow: 0 12px 32px var(--button-shadow);
+  border-radius: 16px;
+  box-shadow: none;
 }
 
 .item-main {
@@ -776,14 +784,14 @@ body:has(.app-content[hidden]) .auth-panel {
 .icon-action {
   width: 42px;
   min-height: 42px;
-  border: 1px solid var(--box-border);
+  border: 1px solid color-mix(in srgb, var(--danger) 28%, transparent);
   background: var(--danger-soft);
   color: var(--danger);
 }
 
 .pay-action {
   min-height: 42px;
-  border: 1px solid var(--box-border);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
   background: var(--accent-soft);
   color: var(--accent);
   padding: 0 12px;
@@ -822,7 +830,7 @@ body:has(.app-content[hidden]) .auth-panel {
   gap: 6px;
   padding: 22px;
   border-style: dashed;
-  border-radius: 20px;
+  border-radius: 16px;
   color: var(--muted);
   font-size: 0.98rem;
   text-align: center;
@@ -947,7 +955,7 @@ body:has(.app-content[hidden]) .auth-panel {
   .entry-form,
   .item,
   .card-detail-card {
-    border-radius: 18px;
+    border-radius: 16px;
   }
 
   .tab {
