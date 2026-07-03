@@ -9,6 +9,9 @@ const money = new Intl.NumberFormat("es-AR", {
 });
 
 const monthFilter = document.querySelector("#monthFilter");
+const themeToggle = document.querySelector("#themeToggle");
+const themeIcon = document.querySelector("#themeIcon");
+const themeLabel = document.querySelector("#themeLabel");
 const dailyForm = document.querySelector("#dailyForm");
 const newCardForm = document.querySelector("#newCardForm");
 const cardForm = document.querySelector("#cardForm");
@@ -29,6 +32,7 @@ init();
 function init() {
   const today = new Date();
   const currentMonth = toMonthValue(today);
+  applyTheme(localStorage.getItem("organizador-theme") ?? "light");
   monthFilter.value = currentMonth;
   dailyForm.elements.date.value = toDateValue(today);
   cardForm.elements.purchaseDate.value = toDateValue(today);
@@ -38,12 +42,16 @@ function init() {
     tab.addEventListener("click", () => setActiveTab(tab.dataset.tab));
   });
 
+  themeToggle.addEventListener("click", toggleTheme);
   monthFilter.addEventListener("change", render);
   dailyForm.addEventListener("submit", addDailyExpense);
   newCardForm.addEventListener("submit", addCard);
   cardForm.addEventListener("submit", addCardPurchase);
   cardSelect.addEventListener("change", () => selectCard(cardSelect.value));
   document.querySelector("#clearDaily").addEventListener("click", clearDailyMonth);
+  document.querySelectorAll("[data-money]").forEach((input) => {
+    input.addEventListener("input", () => formatMoneyInput(input));
+  });
 
   render();
 }
@@ -97,6 +105,37 @@ function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
+function toggleTheme() {
+  const currentTheme = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+  applyTheme(currentTheme === "dark" ? "light" : "dark");
+}
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  localStorage.setItem("organizador-theme", theme);
+
+  const isDark = theme === "dark";
+  themeIcon.textContent = isDark ? "L" : "D";
+  themeLabel.textContent = isDark ? "Claro" : "Oscuro";
+  document.querySelector("meta[name='theme-color']").setAttribute("content", isDark ? "#111816" : "#315f72");
+}
+
+function formatMoneyInput(input) {
+  const digits = input.value.replace(/\D/g, "");
+  input.value = digits ? formatThousands(Number(digits)) : "";
+}
+
+function parseMoneyInput(value) {
+  return Number(String(value).replace(/\D/g, "")) || 0;
+}
+
+function formatThousands(value) {
+  return new Intl.NumberFormat("es-AR", {
+    maximumFractionDigits: 0,
+    useGrouping: true,
+  }).format(value);
+}
+
 function setActiveTab(tabId) {
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.tab === tabId);
@@ -117,7 +156,7 @@ function addDailyExpense(event) {
     description: data.get("description").trim(),
     category: data.get("category"),
     paymentMethod: data.get("paymentMethod"),
-    amount: Number(data.get("amount")),
+    amount: parseMoneyInput(data.get("amount")),
   });
 
   form.elements.description.value = "";
@@ -162,7 +201,7 @@ function addCardPurchase(event) {
     cardId,
     purchaseDate: data.get("purchaseDate"),
     purchase: data.get("purchase").trim(),
-    amount: Number(data.get("amount")),
+    amount: parseMoneyInput(data.get("amount")),
     installments,
     paidInstallments,
     firstDueMonth: data.get("firstDueMonth"),

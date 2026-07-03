@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#2563eb">
+    <meta name="theme-color" content="#315f72">
     <title>Organizador de gastos</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.css">
@@ -15,9 +15,15 @@
           <p class="eyebrow">Control personal</p>
           <h1>Gastos</h1>
         </div>
-        <div class="month-picker">
-          <label for="monthFilter">Mes</label>
-          <input id="monthFilter" type="month">
+        <div class="header-actions">
+          <button id="themeToggle" class="theme-toggle" type="button" aria-label="Cambiar tema">
+            <span id="themeIcon" class="theme-icon">D</span>
+            <span id="themeLabel">Oscuro</span>
+          </button>
+          <div class="month-picker">
+            <label for="monthFilter">Mes</label>
+            <input id="monthFilter" type="month">
+          </div>
         </div>
       </header>
 
@@ -59,7 +65,7 @@
             <label>Monto
               <span class="money-input">
                 <span>$</span>
-                <input name="amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required>
+                <input name="amount" type="text" inputmode="numeric" autocomplete="off" data-money placeholder="0" required>
               </span>
             </label>
           </div>
@@ -127,7 +133,7 @@
             <label>Monto total
               <span class="money-input">
                 <span>$</span>
-                <input name="amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required>
+                <input name="amount" type="text" inputmode="numeric" autocomplete="off" data-money placeholder="0" required>
               </span>
             </label>
             <label>Cuotas totales
