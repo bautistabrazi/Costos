@@ -22,9 +22,12 @@ const authForm = document.querySelector("#authForm");
 const authTitle = document.querySelector("#authTitle");
 const authMessage = document.querySelector("#authMessage");
 const authSwitch = document.querySelector("#authSwitch");
+const authEmailLabel = document.querySelector("#authEmailLabel");
+const authPasswordLabel = document.querySelector("#authPasswordLabel");
 const loginModeButton = document.querySelector("#loginModeButton");
 const signupModeButton = document.querySelector("#signupModeButton");
 const authSubmitButton = document.querySelector("#authSubmitButton");
+const recoverModeButton = document.querySelector("#recoverModeButton");
 const sessionPanel = document.querySelector("#sessionPanel");
 const userEmail = document.querySelector("#userEmail");
 const signOutButton = document.querySelector("#signOutButton");
@@ -62,6 +65,7 @@ async function init() {
   themeToggle.addEventListener("click", toggleTheme);
   loginModeButton.addEventListener("click", () => setAuthMode("login"));
   signupModeButton.addEventListener("click", () => setAuthMode("signup"));
+  recoverModeButton.addEventListener("click", () => setAuthMode("recover"));
   authForm.addEventListener("submit", submitAuthForm);
   signOutButton.addEventListener("click", signOut);
   monthFilter.addEventListener("change", render);
@@ -93,8 +97,15 @@ function setupSupabase() {
     },
   });
 
-  supabaseClient.auth.onAuthStateChange((_event, session) => {
+  supabaseClient.auth.onAuthStateChange((event, session) => {
     currentUser = session?.user ?? null;
+    if (event === "PASSWORD_RECOVERY") {
+      setPasswordUpdateUi();
+      setAppEnabled(false);
+      render();
+      return;
+    }
+
     if (currentUser) {
       loadRemoteState();
     } else {
@@ -136,20 +147,43 @@ async function submitAuthForm(event) {
   const formData = new FormData(event.currentTarget);
   const email = formData.get("email").trim();
   const password = formData.get("password");
-  if (!isValidEmail(email)) {
+  if (authMode !== "update" && !isValidEmail(email)) {
     authMessage.textContent = "Ingresa un correo electronico valido.";
     return;
   }
 
-  if (!password) {
+  if (authMode !== "recover" && !password) {
     authMessage.textContent = "Ingresa una contrasena para continuar.";
     return;
   }
 
   setAuthBusy(true);
-  authMessage.textContent = authMode === "signup" ? "Creando tu cuenta..." : "Ingresando a tu cuenta...";
+  authMessage.textContent = getAuthBusyMessage();
 
   try {
+    if (authMode === "recover") {
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.href.split("#")[0],
+      });
+      authMessage.textContent = error
+        ? getAuthErrorMessage(error)
+        : "Te enviamos un enlace para recuperar tu contrasena. Revisa tu correo.";
+      return;
+    }
+
+    if (authMode === "update") {
+      const { data, error } = await supabaseClient.auth.updateUser({ password });
+      if (error) {
+        authMessage.textContent = getAuthErrorMessage(error);
+        return;
+      }
+
+      currentUser = data.user;
+      authMessage.textContent = "Contrasena actualizada. Cargando tus datos...";
+      await loadRemoteState();
+      return;
+    }
+
     if (authMode === "signup") {
       const signupResult = await createAccount(email, password);
       if (signupResult.error) {
@@ -222,7 +256,7 @@ function setSignedInUi() {
 function setSignedOutUi(message) {
   authPanel.classList.remove("signed-in");
   if (supabaseClient) {
-    setAuthMode(authMode);
+    setAuthMode(authMode === "update" ? "login" : authMode);
   } else {
     authTitle.textContent = "Conecta Supabase";
   }
@@ -239,16 +273,20 @@ function setAuthMode(mode) {
   if (authBusy) return;
   authMode = mode;
   const isSignup = authMode === "signup";
-  authTitle.textContent = isSignup ? "Crear cuenta" : "Iniciar sesion";
+  const isRecover = authMode === "recover";
+  const isUpdate = authMode === "update";
+  authTitle.textContent = getAuthTitle();
   updateAuthButtonText();
-  loginModeButton.classList.toggle("active", !isSignup);
+  loginModeButton.classList.toggle("active", authMode === "login");
   signupModeButton.classList.toggle("active", isSignup);
-  loginModeButton.setAttribute("aria-selected", String(!isSignup));
+  loginModeButton.setAttribute("aria-selected", String(authMode === "login"));
   signupModeButton.setAttribute("aria-selected", String(isSignup));
-  authForm.elements.password.autocomplete = isSignup ? "new-password" : "current-password";
-  authMessage.textContent = isSignup
-    ? "Crea tu cuenta y entra automaticamente con ese mismo correo y contrasena."
-    : "Ingresa con tu correo y contrasena para acceder a tus gastos.";
+  authSwitch.hidden = isUpdate;
+  authEmailLabel.hidden = isUpdate;
+  authPasswordLabel.hidden = isRecover;
+  recoverModeButton.hidden = isUpdate;
+  authForm.elements.password.autocomplete = isSignup || isUpdate ? "new-password" : "current-password";
+  authMessage.textContent = getAuthModeMessage();
 }
 
 function setAuthBusy(isBusy) {
@@ -256,16 +294,68 @@ function setAuthBusy(isBusy) {
   authSubmitButton.disabled = isBusy;
   loginModeButton.disabled = isBusy;
   signupModeButton.disabled = isBusy;
+  recoverModeButton.disabled = isBusy;
   updateAuthButtonText();
 }
 
 function updateAuthButtonText() {
   if (authBusy) {
-    authSubmitButton.textContent = authMode === "signup" ? "Creando cuenta..." : "Ingresando...";
+    authSubmitButton.textContent = getAuthBusyButtonText();
     return;
   }
 
-  authSubmitButton.textContent = authMode === "signup" ? "Crear cuenta" : "Ingresar";
+  authSubmitButton.textContent = getAuthSubmitText();
+}
+
+function setPasswordUpdateUi() {
+  authPanel.classList.remove("signed-in");
+  authMode = "update";
+  authTitle.textContent = "Nueva contrasena";
+  authMessage.textContent = "Escribi una nueva contrasena para volver a entrar a tu cuenta.";
+  authForm.hidden = false;
+  authSwitch.hidden = true;
+  authEmailLabel.hidden = true;
+  authPasswordLabel.hidden = false;
+  recoverModeButton.hidden = true;
+  sessionPanel.hidden = true;
+  appContent.hidden = true;
+  monthFilter.closest(".month-picker").hidden = true;
+  updateAuthButtonText();
+}
+
+function getAuthTitle() {
+  if (authMode === "signup") return "Crear cuenta";
+  if (authMode === "recover") return "Recuperar contrasena";
+  if (authMode === "update") return "Nueva contrasena";
+  return "Iniciar sesion";
+}
+
+function getAuthModeMessage() {
+  if (authMode === "signup") return "Crea tu cuenta y entra automaticamente con ese mismo correo y contrasena.";
+  if (authMode === "recover") return "Ingresa tu correo y te enviamos un enlace seguro para cambiar la contrasena.";
+  if (authMode === "update") return "Escribi una nueva contrasena para volver a entrar a tu cuenta.";
+  return "Ingresa con tu correo y contrasena para acceder a tus gastos.";
+}
+
+function getAuthSubmitText() {
+  if (authMode === "signup") return "Crear cuenta";
+  if (authMode === "recover") return "Enviar recuperacion";
+  if (authMode === "update") return "Guardar contrasena";
+  return "Ingresar";
+}
+
+function getAuthBusyMessage() {
+  if (authMode === "signup") return "Creando tu cuenta...";
+  if (authMode === "recover") return "Enviando correo de recuperacion...";
+  if (authMode === "update") return "Guardando tu nueva contrasena...";
+  return "Ingresando a tu cuenta...";
+}
+
+function getAuthBusyButtonText() {
+  if (authMode === "signup") return "Creando cuenta...";
+  if (authMode === "recover") return "Enviando...";
+  if (authMode === "update") return "Guardando...";
+  return "Ingresando...";
 }
 
 async function createAccount(email, password) {

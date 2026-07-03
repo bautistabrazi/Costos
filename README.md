@@ -26,6 +26,7 @@ Para sincronizar entre dispositivos:
 4. Completar `url` y `anonKey` con los datos del proyecto.
 5. En Vercel, configurar `SUPABASE_SERVICE_ROLE_KEY` como variable de entorno con la secret key de Supabase.
 6. El registro usa `/api/signup` para crear la cuenta ya confirmada y luego iniciar sesion con el mismo mail y contrasena.
+7. Para recuperar contrasena, configurar en Supabase Auth la URL de Vercel como redirect URL permitida.
 
 ## Proximos pasos posibles
 

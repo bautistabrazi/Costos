@@ -38,13 +38,14 @@
           <button id="signupModeButton" class="auth-switch-button" type="button">Crear cuenta</button>
         </div>
         <form id="authForm" class="auth-form" novalidate>
-          <label>Correo electronico
+          <label id="authEmailLabel">Correo electronico
             <input name="email" type="email" autocomplete="email" placeholder="tu@email.com" required>
           </label>
-          <label>Contrasena
+          <label id="authPasswordLabel">Contrasena
             <input name="password" type="password" autocomplete="current-password" placeholder="Tu contrasena" required>
           </label>
           <button id="authSubmitButton" class="primary-action" type="submit">Ingresar</button>
+          <button id="recoverModeButton" class="text-action" type="button">Olvide mi contrasena</button>
         </form>
         <div id="sessionPanel" class="session-panel" hidden>
           <span id="userEmail"></span>
