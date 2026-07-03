@@ -92,6 +92,18 @@ p {
   padding: 22px clamp(14px, 4vw, 32px) 34px;
 }
 
+.app-content[hidden],
+.month-picker[hidden],
+[hidden] {
+  display: none !important;
+}
+
+body:has(.app-content[hidden]) .app-shell {
+  min-height: 100vh;
+  display: grid;
+  align-content: start;
+}
+
 .app-header {
   display: flex;
   align-items: center;
@@ -247,19 +259,27 @@ h2 {
 
 .auth-panel {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
   align-items: center;
+  width: min(720px, 100%);
   margin-bottom: 16px;
-  padding: 16px;
+  padding: clamp(20px, 4vw, 32px);
   border: 1px solid var(--soft-border);
-  border-radius: 22px;
+  border-radius: 24px;
   background: var(--surface);
   box-shadow: var(--shadow);
   backdrop-filter: blur(18px);
 }
 
+body:has(.app-content[hidden]) .auth-panel {
+  margin-top: clamp(24px, 8vh, 78px);
+}
+
 .auth-panel.signed-in {
+  width: 100%;
+  grid-template-columns: 1fr auto;
+  padding: 16px;
   border-color: color-mix(in srgb, var(--primary) 35%, var(--soft-border));
 }
 
@@ -272,7 +292,7 @@ h2 {
 
 .auth-form {
   display: grid;
-  grid-template-columns: minmax(210px, 1fr) auto;
+  grid-template-columns: minmax(240px, 1fr) auto;
   gap: 10px;
   align-items: end;
 }
@@ -293,6 +313,11 @@ h2 {
   color: var(--ink);
   padding: 10px 12px;
   outline: none;
+}
+
+body:has(.app-content[hidden]) .auth-form input,
+body:has(.app-content[hidden]) .auth-form .primary-action {
+  min-height: 52px;
 }
 
 .session-panel {
@@ -747,6 +772,10 @@ h2 {
 
   .auth-panel,
   .auth-form {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-panel.signed-in {
     grid-template-columns: 1fr;
   }
 

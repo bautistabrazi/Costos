@@ -22,6 +22,7 @@ const authMessage = document.querySelector("#authMessage");
 const sessionPanel = document.querySelector("#sessionPanel");
 const userEmail = document.querySelector("#userEmail");
 const signOutButton = document.querySelector("#signOutButton");
+const appContent = document.querySelector("#appContent");
 const dailyForm = document.querySelector("#dailyForm");
 const newCardForm = document.querySelector("#newCardForm");
 const cardForm = document.querySelector("#cardForm");
@@ -128,8 +129,8 @@ async function signInWithEmail(event) {
   });
 
   authMessage.textContent = error
-    ? `No se pudo enviar el acceso: ${error.message}`
-    : "Te mande un link de acceso. Revisa tu email y volve desde ese enlace.";
+    ? getAuthErrorMessage(error)
+    : "Te enviamos un enlace de acceso. Revisa tu correo electronico y volve a ingresar desde ese enlace.";
 }
 
 async function signOut() {
@@ -174,15 +175,19 @@ function setSignedInUi() {
   authForm.hidden = true;
   sessionPanel.hidden = false;
   userEmail.textContent = currentUser.email;
+  appContent.hidden = false;
+  monthFilter.closest(".month-picker").hidden = false;
 }
 
 function setSignedOutUi(message) {
   authPanel.classList.remove("signed-in");
-  authTitle.textContent = supabaseClient ? "Ingresar" : "Conecta Supabase";
+  authTitle.textContent = supabaseClient ? "Ingresar o crear cuenta" : "Conecta Supabase";
   authMessage.textContent = message;
   authForm.hidden = !supabaseClient;
   sessionPanel.hidden = true;
   userEmail.textContent = "";
+  appContent.hidden = true;
+  monthFilter.closest(".month-picker").hidden = true;
 }
 
 function setAppEnabled(enabled) {
@@ -613,6 +618,16 @@ async function markCardInstallmentPaid(id) {
 
 function showError(error) {
   authMessage.textContent = `Error: ${error.message}`;
+}
+
+function getAuthErrorMessage(error) {
+  const message = error.message ?? "";
+  if (message.includes("only request this after")) {
+    const seconds = message.match(/\d+/)?.[0] ?? "unos";
+    return `Por seguridad, espera ${seconds} segundos antes de solicitar otro enlace de acceso.`;
+  }
+
+  return `No se pudo enviar el acceso: ${message}`;
 }
 
 function getSelectedCard() {
