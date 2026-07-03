@@ -527,7 +527,7 @@ async function addCardPurchase(event) {
 
   if (!state.cards.some((card) => card.id === cardId)) return;
 
-  const payload = {
+  const basePayload = {
     user_id: currentUser.id,
     card_id: cardId,
     purchase_date: data.get("purchaseDate"),
@@ -536,11 +536,14 @@ async function addCardPurchase(event) {
     installments,
     paid_installments: paidInstallments,
     first_due_month: data.get("firstDueMonth"),
+  };
+  const payload = {
+    ...basePayload,
     is_fixed_expense: isFixedExpense,
     fixed_expense_active: true,
   };
 
-  const { data: inserted, error } = await supabaseClient.from("card_purchases").insert(payload).select().single();
+  const { data: inserted, error } = await insertCardPurchase(payload, basePayload, isFixedExpense);
   if (error) return showError(error);
 
   state.cardPurchases.push(mapPurchaseFromDb(inserted));
@@ -552,6 +555,15 @@ async function addCardPurchase(event) {
   form.elements.paidInstallments.value = "0";
   syncFixedExpenseFields();
   render();
+}
+
+async function insertCardPurchase(payload, basePayload, isFixedExpense) {
+  const result = await supabaseClient.from("card_purchases").insert(payload).select().single();
+  if (!result.error || isFixedExpense || !isMissingFixedExpenseColumnError(result.error)) {
+    return result;
+  }
+
+  return supabaseClient.from("card_purchases").insert(basePayload).select().single();
 }
 
 function selectCard(cardId) {
@@ -840,7 +852,23 @@ async function markCardInstallmentPaid(id) {
 }
 
 function showError(error) {
-  authMessage.textContent = `Error: ${error.message}`;
+  const message = getAppErrorMessage(error);
+  authMessage.textContent = message;
+  window.alert(message);
+}
+
+function getAppErrorMessage(error) {
+  const message = error.message ?? String(error);
+  if (isMissingFixedExpenseColumnError(error)) {
+    return "Falta actualizar Supabase con las columnas de gasto fijo. Ejecuta el SQL actualizado y vuelve a probar.";
+  }
+
+  return `Error: ${message}`;
+}
+
+function isMissingFixedExpenseColumnError(error) {
+  const message = `${error.message ?? ""} ${error.details ?? ""} ${error.hint ?? ""}`.toLowerCase();
+  return message.includes("is_fixed_expense") || message.includes("fixed_expense_active");
 }
 
 function getAuthErrorMessage(error) {
