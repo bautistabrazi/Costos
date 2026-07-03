@@ -16,8 +16,10 @@ export default async function handler(request, response) {
   }
 
   const { email, password } = request.body ?? {};
-  if (!isValidEmail(email) || !password) {
-    return response.status(400).json({ error: "Ingresa un correo valido y una contrasena." });
+  const firstName = normalizeName(request.body?.firstName);
+  const lastName = normalizeName(request.body?.lastName);
+  if (!isValidEmail(email) || !password || !firstName || !lastName) {
+    return response.status(400).json({ error: "Ingresa nombre, apellido, correo valido y contrasena." });
   }
 
   try {
@@ -32,6 +34,11 @@ export default async function handler(request, response) {
         email,
         password,
         email_confirm: true,
+        user_metadata: {
+          first_name: firstName,
+          last_name: lastName,
+          full_name: `${firstName} ${lastName}`,
+        },
       }),
     });
 
@@ -52,6 +59,10 @@ export default async function handler(request, response) {
 
 function isValidEmail(email) {
   return typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function normalizeName(value) {
+  return String(value ?? "").trim().replace(/\s+/g, " ");
 }
 
 function statusForSupabaseError(result) {

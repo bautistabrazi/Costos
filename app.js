@@ -17,11 +17,13 @@ const monthFilter = document.querySelector("#monthFilter");
 const themeToggle = document.querySelector("#themeToggle");
 const themeIcon = document.querySelector("#themeIcon");
 const themeLabel = document.querySelector("#themeLabel");
+const ownerName = document.querySelector("#ownerName");
 const authPanel = document.querySelector("#authPanel");
 const authForm = document.querySelector("#authForm");
 const authTitle = document.querySelector("#authTitle");
 const authMessage = document.querySelector("#authMessage");
 const authSwitch = document.querySelector("#authSwitch");
+const authNameFields = document.querySelector("#authNameFields");
 const authEmailLabel = document.querySelector("#authEmailLabel");
 const authPasswordLabel = document.querySelector("#authPasswordLabel");
 const loginModeButton = document.querySelector("#loginModeButton");
@@ -147,8 +149,15 @@ async function submitAuthForm(event) {
   const formData = new FormData(event.currentTarget);
   const email = formData.get("email").trim();
   const password = formData.get("password");
+  const firstName = normalizeName(formData.get("firstName"));
+  const lastName = normalizeName(formData.get("lastName"));
   if (authMode !== "update" && !isValidEmail(email)) {
     authMessage.textContent = "Ingresa un correo electronico valido.";
+    return;
+  }
+
+  if (authMode === "signup" && (!firstName || !lastName)) {
+    authMessage.textContent = "Ingresa tu nombre y apellido para crear la cuenta.";
     return;
   }
 
@@ -185,7 +194,7 @@ async function submitAuthForm(event) {
     }
 
     if (authMode === "signup") {
-      const signupResult = await createAccount(email, password);
+      const signupResult = await createAccount({ email, password, firstName, lastName });
       if (signupResult.error) {
         authMessage.textContent = signupResult.error;
         return;
@@ -249,6 +258,7 @@ function setSignedInUi() {
   authSwitch.hidden = true;
   sessionPanel.hidden = false;
   userEmail.textContent = currentUser.email;
+  ownerName.textContent = getUserDisplayName(currentUser);
   appContent.hidden = false;
   monthFilter.closest(".month-picker").hidden = false;
 }
@@ -265,6 +275,7 @@ function setSignedOutUi(message) {
   authSwitch.hidden = !supabaseClient;
   sessionPanel.hidden = true;
   userEmail.textContent = "";
+  ownerName.textContent = "Gastos";
   appContent.hidden = true;
   monthFilter.closest(".month-picker").hidden = true;
 }
@@ -282,6 +293,7 @@ function setAuthMode(mode) {
   loginModeButton.setAttribute("aria-selected", String(authMode === "login"));
   signupModeButton.setAttribute("aria-selected", String(isSignup));
   authSwitch.hidden = isUpdate;
+  authNameFields.hidden = !isSignup;
   authEmailLabel.hidden = isUpdate;
   authPasswordLabel.hidden = isRecover;
   recoverModeButton.hidden = isUpdate;
@@ -314,6 +326,7 @@ function setPasswordUpdateUi() {
   authMessage.textContent = "Escribi una nueva contrasena para volver a entrar a tu cuenta.";
   authForm.hidden = false;
   authSwitch.hidden = true;
+  authNameFields.hidden = true;
   authEmailLabel.hidden = true;
   authPasswordLabel.hidden = false;
   recoverModeButton.hidden = true;
@@ -358,11 +371,11 @@ function getAuthBusyButtonText() {
   return "Ingresando...";
 }
 
-async function createAccount(email, password) {
+async function createAccount(payload) {
   const response = await fetch("/api/signup", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify(payload),
   });
   const result = await response.json().catch(() => ({}));
 
@@ -375,6 +388,19 @@ async function createAccount(email, password) {
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function normalizeName(value) {
+  return String(value ?? "").trim().replace(/\s+/g, " ");
+}
+
+function getUserDisplayName(user) {
+  const metadata = user?.user_metadata ?? {};
+  const fullName = normalizeName(metadata.full_name);
+  const firstName = normalizeName(metadata.first_name);
+  const lastName = normalizeName(metadata.last_name);
+  const composedName = normalizeName(`${firstName} ${lastName}`);
+  return fullName || composedName || user?.email?.split("@")[0] || "Gastos";
 }
 
 function setAppEnabled(enabled) {

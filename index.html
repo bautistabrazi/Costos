@@ -12,8 +12,8 @@
     <main class="app-shell">
       <header class="app-header">
         <div>
-          <p class="eyebrow">Control personal</p>
-          <h1>Gastos</h1>
+          <p id="headerEyebrow" class="eyebrow">Control personal de gastos</p>
+          <h1 id="ownerName">Gastos</h1>
         </div>
         <div class="header-actions">
           <button id="themeToggle" class="theme-toggle" type="button" aria-label="Cambiar tema">
@@ -38,6 +38,14 @@
           <button id="signupModeButton" class="auth-switch-button" type="button">Crear cuenta</button>
         </div>
         <form id="authForm" class="auth-form" novalidate>
+          <div id="authNameFields" class="name-fields" hidden>
+            <label>Nombre
+              <input name="firstName" type="text" autocomplete="given-name" placeholder="Tu nombre">
+            </label>
+            <label>Apellido
+              <input name="lastName" type="text" autocomplete="family-name" placeholder="Tu apellido">
+            </label>
+          </div>
           <label id="authEmailLabel">Correo electronico
             <input name="email" type="email" autocomplete="email" placeholder="tu@email.com" required>
           </label>

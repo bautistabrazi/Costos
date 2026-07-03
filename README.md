@@ -12,7 +12,7 @@ App para registrar gastos diarios, compras con tarjeta en cuotas y ver resumen m
 6. Usar `Pagar` para marcar una cuota como pagada.
 7. Revisar la pestana `Proyeccion` para ver los proximos 12 meses.
 8. Cambiar entre tema claro y oscuro desde el boton superior.
-9. Crear cuenta o iniciar sesion con correo y contrasena para sincronizar datos.
+9. Crear cuenta con nombre, apellido, correo y contrasena, o iniciar sesion para sincronizar datos.
 
 Los datos se guardan en Supabase cuando `config.js` tiene la URL y anon key del proyecto.
 
@@ -25,7 +25,7 @@ Para sincronizar entre dispositivos:
 3. Copiar `config.example.js` a `config.js`.
 4. Completar `url` y `anonKey` con los datos del proyecto.
 5. En Vercel, configurar `SUPABASE_SERVICE_ROLE_KEY` como variable de entorno con la secret key de Supabase.
-6. El registro usa `/api/signup` para crear la cuenta ya confirmada y luego iniciar sesion con el mismo mail y contrasena.
+6. El registro usa `/api/signup` para crear la cuenta ya confirmada con nombre y apellido, y luego iniciar sesion con el mismo mail y contrasena.
 7. Para recuperar contrasena, configurar en Supabase Auth la URL de Vercel como redirect URL permitida.
 
 ## Proximos pasos posibles
