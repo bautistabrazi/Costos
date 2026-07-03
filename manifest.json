@@ -1,0 +1,10 @@
+{
+  "name": "Organizador de gastos",
+  "short_name": "Gastos",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#2563eb",
+  "lang": "es-AR",
+  "icons": []
+}
