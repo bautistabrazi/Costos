@@ -244,11 +244,13 @@ async function loadRemoteState() {
     state.selectedCardId = state.cards[0]?.id ?? null;
   }
 
+  authPanel.hidden = true;
   setAppEnabled(true);
   render();
 }
 
 function setSignedInUi() {
+  authPanel.hidden = false;
   authPanel.classList.add("signed-in");
   authTitle.textContent = "Cuenta sincronizada";
   authMessage.textContent = "";
@@ -261,6 +263,7 @@ function setSignedInUi() {
 }
 
 function setSignedOutUi(message) {
+  authPanel.hidden = false;
   authPanel.classList.remove("signed-in");
   if (supabaseClient) {
     setAuthMode(authMode === "update" ? "login" : authMode);
@@ -316,6 +319,7 @@ function updateAuthButtonText() {
 }
 
 function setPasswordUpdateUi() {
+  authPanel.hidden = false;
   authPanel.classList.remove("signed-in");
   authMode = "update";
   authTitle.textContent = "Nueva contrasena";

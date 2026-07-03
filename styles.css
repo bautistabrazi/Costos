@@ -10,6 +10,7 @@
   --ink: #17201d;
   --muted: #66736f;
   --line: #dce7e5;
+  --box-border: #111816;
   --primary: #176b73;
   --primary-dark: #0f5058;
   --primary-soft: #e3f5f3;
@@ -38,6 +39,7 @@ html[data-theme="dark"] {
   --ink: #eff7f4;
   --muted: #a8b8b3;
   --line: #2b3e3b;
+  --box-border: #f3fbf8;
   --primary: #75d0c4;
   --primary-dark: #9be3da;
   --primary-soft: #173836;
@@ -66,7 +68,7 @@ body {
     radial-gradient(circle at 86% 12%, color-mix(in srgb, var(--accent) 13%, transparent), transparent 24rem),
     linear-gradient(180deg, var(--page-start) 0%, var(--bg) 48%, var(--page-end) 100%);
   color: var(--ink);
-  font-family: Aptos, "Aptos Display", "Segoe UI Variable", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Inter", "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, ui-sans-serif, system-ui, sans-serif;
   font-size: 16px;
   font-weight: 400;
 }
@@ -169,9 +171,9 @@ body:has(.app-content[hidden]) .header-actions {
 }
 
 h1 {
-  font-size: clamp(2.35rem, 7vw, 4.3rem);
-  font-weight: 620;
-  line-height: 1;
+  font-size: clamp(1.9rem, 5vw, 3.05rem);
+  font-weight: 650;
+  line-height: 1.05;
   letter-spacing: 0;
 }
 
@@ -193,7 +195,7 @@ h2 {
   gap: 6px;
   min-width: 168px;
   padding: 10px;
-  border: 1px solid var(--soft-border);
+  border: 1px solid var(--box-border);
   border-radius: 18px;
   background: var(--surface);
   box-shadow: 0 10px 30px var(--button-shadow);
@@ -212,7 +214,7 @@ h2 {
   width: 100%;
   min-height: 46px;
   margin-top: 6px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--box-border);
   border-radius: 14px;
   background: var(--field);
   color: var(--ink);
@@ -227,7 +229,7 @@ h2 {
   align-items: center;
   min-height: 46px;
   margin-top: 6px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--box-border);
   border-radius: 14px;
   background: var(--field);
   transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
@@ -287,7 +289,7 @@ h2 {
   justify-self: center;
   margin-bottom: 16px;
   padding: clamp(24px, 5vw, 36px);
-  border: 1px solid var(--soft-border);
+  border: 1px solid var(--box-border);
   border-radius: 26px;
   background: var(--surface);
   box-shadow: 0 24px 80px rgba(24, 41, 38, 0.16);
@@ -303,7 +305,7 @@ body:has(.app-content[hidden]) .auth-panel {
   width: max-content;
   max-width: 100%;
   padding: 12px 18px;
-  border-color: color-mix(in srgb, var(--primary) 35%, var(--soft-border));
+  border-color: var(--box-border);
   border-radius: 999px;
   box-shadow: 0 12px 32px var(--button-shadow);
 }
@@ -331,7 +333,7 @@ body:has(.app-content[hidden]) .auth-panel {
   grid-template-columns: repeat(2, 1fr);
   gap: 6px;
   padding: 6px;
-  border: 1px solid var(--soft-border);
+  border: 1px solid var(--box-border);
   border-radius: 18px;
   background: var(--field);
 }
@@ -381,7 +383,7 @@ body:has(.app-content[hidden]) .auth-panel {
   width: 100%;
   min-height: 54px;
   margin-top: 8px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--box-border);
   border-radius: 16px;
   background: var(--field);
   color: var(--ink);
@@ -430,7 +432,7 @@ body:has(.app-content[hidden]) .auth-panel {
 .item,
 .projection-list,
 .empty-state {
-  border: 1px solid var(--soft-border);
+  border: 1px solid var(--box-border);
   background: var(--surface);
   box-shadow: var(--shadow);
   backdrop-filter: blur(18px);
@@ -440,41 +442,37 @@ body:has(.app-content[hidden]) .auth-panel {
   position: relative;
   overflow: hidden;
   display: grid;
-  align-content: end;
-  min-height: 190px;
-  padding: 22px;
-  border-radius: 24px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--hero-a) 96%, transparent), color-mix(in srgb, var(--hero-b) 88%, transparent)),
-    var(--primary);
-  color: #ffffff;
+  align-content: space-between;
+  min-height: 172px;
+  padding: 20px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, var(--surface-strong), var(--surface));
+  color: var(--ink);
 }
 
 .total-card::after {
   content: "";
   position: absolute;
-  right: -78px;
-  top: -78px;
-  width: 210px;
-  height: 210px;
-  border: 34px solid rgba(255, 255, 255, 0.16);
-  border-radius: 999px;
+  inset: 0 0 auto;
+  height: 6px;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
 }
 
 .total-card span,
 .total-card small {
   position: relative;
   z-index: 1;
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--muted);
   font-weight: 560;
 }
 
 .total-card strong {
   position: relative;
   z-index: 1;
-  margin: 8px 0;
-  font-size: clamp(2.15rem, 8vw, 4rem);
-  font-weight: 650;
+  margin: 18px 0 6px;
+  color: var(--ink);
+  font-size: clamp(2rem, 7vw, 3.25rem);
+  font-weight: 720;
   line-height: 1;
 }
 
@@ -514,7 +512,7 @@ body:has(.app-content[hidden]) .auth-panel {
   gap: 4px;
   margin-bottom: 16px;
   padding: 5px;
-  border: 1px solid var(--soft-border);
+  border: 1px solid var(--box-border);
   border-radius: 20px;
   background: var(--surface);
   box-shadow: 0 12px 30px var(--button-shadow);
@@ -595,7 +593,7 @@ body:has(.app-content[hidden]) .auth-panel {
   display: grid;
   gap: 2px;
   min-width: max-content;
-  border: 1px solid var(--soft-border);
+  border: 1px solid var(--box-border);
   border-radius: 16px;
   background: var(--surface);
   color: var(--ink);
@@ -631,7 +629,7 @@ body:has(.app-content[hidden]) .auth-panel {
   display: grid;
   gap: 14px;
   padding: 16px;
-  border: 1px solid var(--soft-border);
+  border: 1px solid var(--box-border);
   border-radius: 20px;
   background: var(--surface);
   box-shadow: var(--shadow);
@@ -778,14 +776,14 @@ body:has(.app-content[hidden]) .auth-panel {
 .icon-action {
   width: 42px;
   min-height: 42px;
-  border: 1px solid color-mix(in srgb, var(--danger) 18%, transparent);
+  border: 1px solid var(--box-border);
   background: var(--danger-soft);
   color: var(--danger);
 }
 
 .pay-action {
   min-height: 42px;
-  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+  border: 1px solid var(--box-border);
   background: var(--accent-soft);
   color: var(--accent);
   padding: 0 12px;
@@ -942,7 +940,7 @@ body:has(.app-content[hidden]) .auth-panel {
   }
 
   h1 {
-    font-size: clamp(2rem, 13vw, 2.85rem);
+    font-size: clamp(1.75rem, 11vw, 2.35rem);
   }
 
   .auth-panel,
