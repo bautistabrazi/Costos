@@ -16,7 +16,6 @@ let authBusy = false;
 const monthFilter = document.querySelector("#monthFilter");
 const themeToggle = document.querySelector("#themeToggle");
 const themeIcon = document.querySelector("#themeIcon");
-const themeLabel = document.querySelector("#themeLabel");
 const ownerName = document.querySelector("#ownerName");
 const authPanel = document.querySelector("#authPanel");
 const authForm = document.querySelector("#authForm");
@@ -31,7 +30,6 @@ const signupModeButton = document.querySelector("#signupModeButton");
 const authSubmitButton = document.querySelector("#authSubmitButton");
 const recoverModeButton = document.querySelector("#recoverModeButton");
 const sessionPanel = document.querySelector("#sessionPanel");
-const userEmail = document.querySelector("#userEmail");
 const signOutButton = document.querySelector("#signOutButton");
 const appContent = document.querySelector("#appContent");
 const dailyForm = document.querySelector("#dailyForm");
@@ -252,12 +250,11 @@ async function loadRemoteState() {
 
 function setSignedInUi() {
   authPanel.classList.add("signed-in");
-  authTitle.textContent = "Sincronizado";
-  authMessage.textContent = "Tus datos se guardan en Supabase y se ven desde cualquier dispositivo.";
+  authTitle.textContent = "Cuenta sincronizada";
+  authMessage.textContent = "";
   authForm.hidden = true;
   authSwitch.hidden = true;
   sessionPanel.hidden = false;
-  userEmail.textContent = currentUser.email;
   ownerName.textContent = getUserDisplayName(currentUser);
   appContent.hidden = false;
   monthFilter.closest(".month-picker").hidden = false;
@@ -274,7 +271,6 @@ function setSignedOutUi(message) {
   authForm.hidden = !supabaseClient;
   authSwitch.hidden = !supabaseClient;
   sessionPanel.hidden = true;
-  userEmail.textContent = "";
   ownerName.textContent = "Gastos";
   appContent.hidden = true;
   monthFilter.closest(".month-picker").hidden = true;
@@ -398,9 +394,7 @@ function getUserDisplayName(user) {
   const metadata = user?.user_metadata ?? {};
   const fullName = normalizeName(metadata.full_name);
   const firstName = normalizeName(metadata.first_name);
-  const lastName = normalizeName(metadata.last_name);
-  const composedName = normalizeName(`${firstName} ${lastName}`);
-  return fullName || composedName || user?.email?.split("@")[0] || "Gastos";
+  return firstName || fullName.split(" ")[0] || user?.email?.split("@")[0] || "Gastos";
 }
 
 function setAppEnabled(enabled) {
@@ -431,8 +425,8 @@ function applyTheme(theme) {
   localStorage.setItem("organizador-theme", theme);
 
   const isDark = theme === "dark";
-  themeIcon.textContent = isDark ? "L" : "D";
-  themeLabel.textContent = isDark ? "Claro" : "Oscuro";
+  themeIcon.textContent = isDark ? "💡" : "🌙";
+  themeToggle.setAttribute("aria-label", isDark ? "Cambiar a tema claro" : "Cambiar a tema oscuro");
   document.querySelector("meta[name='theme-color']").setAttribute("content", isDark ? "#111816" : "#315f72");
 }
 

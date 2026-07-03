@@ -132,15 +132,15 @@ body:has(.app-content[hidden]) .header-actions {
 }
 
 .theme-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: grid;
+  place-items: center;
   min-height: 48px;
+  width: 48px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--surface);
   color: var(--ink);
-  padding: 0 13px;
+  padding: 0;
   cursor: pointer;
   font-size: 0.95rem;
   font-weight: 560;
@@ -150,12 +150,13 @@ body:has(.app-content[hidden]) .header-actions {
 .theme-icon {
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: var(--primary-soft);
   color: var(--primary);
-  font-size: 0.98rem;
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .eyebrow {
@@ -178,6 +179,13 @@ h2 {
   font-size: 1.12rem;
   font-weight: 620;
   letter-spacing: 0;
+}
+
+.owner-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .month-picker {
@@ -292,10 +300,22 @@ body:has(.app-content[hidden]) .auth-panel {
 }
 
 .auth-panel.signed-in {
-  width: 100%;
-  grid-template-columns: 1fr auto;
-  padding: 16px;
+  width: max-content;
+  max-width: 100%;
+  padding: 12px 18px;
   border-color: color-mix(in srgb, var(--primary) 35%, var(--soft-border));
+  border-radius: 999px;
+  box-shadow: 0 12px 32px var(--button-shadow);
+}
+
+.auth-panel.signed-in .eyebrow,
+.auth-panel.signed-in .auth-message {
+  display: none;
+}
+
+.auth-panel.signed-in h2 {
+  color: var(--primary);
+  font-size: 0.95rem;
 }
 
 .auth-message {
@@ -842,6 +862,10 @@ body:has(.app-content[hidden]) .auth-panel {
     justify-items: center;
   }
 
+  .owner-row {
+    justify-content: center;
+  }
+
   .header-actions {
     display: grid;
     width: 100%;
@@ -854,7 +878,8 @@ body:has(.app-content[hidden]) .auth-panel {
 
   .theme-toggle {
     justify-content: center;
-    width: 100%;
+    width: 48px;
+    justify-self: center;
   }
 
   .month-picker {
@@ -875,7 +900,7 @@ body:has(.app-content[hidden]) .auth-panel {
   }
 
   .auth-panel.signed-in {
-    grid-template-columns: 1fr;
+    justify-self: center;
   }
 
   .session-panel {

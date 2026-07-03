@@ -13,12 +13,16 @@
       <header class="app-header">
         <div>
           <p id="headerEyebrow" class="eyebrow">Control personal de gastos</p>
-          <h1 id="ownerName">Gastos</h1>
+          <div class="owner-row">
+            <h1 id="ownerName">Gastos</h1>
+            <div id="sessionPanel" class="session-panel" hidden>
+              <button id="signOutButton" class="ghost-action" type="button">Salir</button>
+            </div>
+          </div>
         </div>
         <div class="header-actions">
           <button id="themeToggle" class="theme-toggle" type="button" aria-label="Cambiar tema">
-            <span id="themeIcon" class="theme-icon">D</span>
-            <span id="themeLabel">Oscuro</span>
+            <span id="themeIcon" class="theme-icon" aria-hidden="true">🌙</span>
           </button>
           <div class="month-picker">
             <label for="monthFilter">Mes</label>
@@ -55,10 +59,6 @@
           <button id="authSubmitButton" class="primary-action" type="submit">Ingresar</button>
           <button id="recoverModeButton" class="text-action" type="button">Olvide mi contrasena</button>
         </form>
-        <div id="sessionPanel" class="session-panel" hidden>
-          <span id="userEmail"></span>
-          <button id="signOutButton" class="ghost-action" type="button">Salir</button>
-        </div>
       </section>
 
       <div id="appContent" class="app-content" hidden>
