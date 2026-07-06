@@ -675,13 +675,13 @@ function renderSelectedCardSummary(selectedMonth) {
   const card = getSelectedCard();
   if (!card) return;
 
-  const activePurchases = purchasesForCard(card.id).filter(isActiveCardPurchase);
+  const cardPurchases = purchasesForCard(card.id);
   const detail = document.createElement("article");
   detail.className = "card-detail-card";
   detail.innerHTML = `
     <div class="card-detail-title">
       <strong>${escapeHtml(card.name)}</strong>
-      <span class="soft-label">${activePurchases.length} compras activas</span>
+      <span class="soft-label">${cardPurchases.length} compras registradas</span>
     </div>
     <div class="card-metrics">
       <div class="card-metric">
@@ -712,36 +712,49 @@ function setCardFormEnabled(enabled) {
 function renderCardList(selectedMonth) {
   cardList.innerHTML = "";
   const card = getSelectedCard();
-  const activePurchases = card ? purchasesForCard(card.id).filter(isActiveCardPurchase) : [];
+  const cardPurchases = card ? purchasesForCard(card.id) : [];
   document.querySelector("#cardsCount").textContent = card
-    ? `${activePurchases.length} compras activas`
+    ? `${cardPurchases.length} compras registradas`
     : "Agrega tus tarjetas";
 
   if (!card) return appendEmpty(cardList);
+  if (!cardPurchases.length) return appendEmpty(cardList);
 
-  const duePurchases = activePurchases.filter((purchase) => installmentNumberForMonth(purchase, selectedMonth) !== null);
-  if (!duePurchases.length) return appendEmpty(cardList);
-
-  [...duePurchases]
+  [...cardPurchases]
     .sort((a, b) => a.purchaseDate.localeCompare(b.purchaseDate))
     .forEach((purchase) => {
-      const installment = installmentNumberForMonth(purchase, selectedMonth);
       const amount = cardPurchaseAmountForMonth(purchase);
-      const meta = purchase.isFixedExpense
-        ? `${card.name} - Gasto fijo mensual`
-        : `${card.name} - Cuota ${installment}/${purchase.installments} - ${remainingInstallments(purchase)} pendientes`;
+      const hasInstallmentsToPay = !purchase.isFixedExpense && remainingInstallments(purchase) > 0;
 
       cardList.append(
         createItem({
           title: purchase.purchase,
-          meta,
+          meta: getCardPurchaseMeta(card, purchase, selectedMonth),
           amount,
-          payLabel: purchase.isFixedExpense ? null : "Pagar",
-          onPay: purchase.isFixedExpense ? null : () => markCardInstallmentPaid(purchase.id),
+          payLabel: hasInstallmentsToPay ? "Pagar" : null,
+          onPay: hasInstallmentsToPay ? () => markCardInstallmentPaid(purchase.id) : null,
           onDelete: () => deleteCardPurchase(purchase.id),
         }),
       );
     });
+}
+
+function getCardPurchaseMeta(card, purchase, selectedMonth) {
+  if (purchase.isFixedExpense) return `${card.name} - Gasto fijo mensual`;
+
+  const remaining = remainingInstallments(purchase);
+  if (remaining === 0) return `${card.name} - Pagada - ${purchase.installments}/${purchase.installments} cuotas`;
+
+  const installment = installmentNumberForMonth(purchase, selectedMonth);
+  if (installment !== null) {
+    return `${card.name} - Cuota ${installment}/${purchase.installments} - ${remaining} pendientes`;
+  }
+
+  if (monthsBetween(purchase.firstDueMonth, selectedMonth) < 0) {
+    return `${card.name} - Empieza en ${formatMonth(purchase.firstDueMonth)} - ${remaining} pendientes`;
+  }
+
+  return `${card.name} - ${purchase.paidInstallments}/${purchase.installments} cuotas pagas - ${remaining} pendientes`;
 }
 
 function renderProjection(selectedMonth) {
@@ -939,10 +952,6 @@ function installmentNumberForMonth(purchase, month) {
 function remainingInstallments(purchase) {
   if (purchase.isFixedExpense) return purchase.fixedExpenseActive ? 1 : 0;
   return Math.max(purchase.installments - purchase.paidInstallments, 0);
-}
-
-function isActiveCardPurchase(purchase) {
-  return purchase.isFixedExpense ? purchase.fixedExpenseActive : remainingInstallments(purchase) > 0;
 }
 
 function cardPurchaseAmountForMonth(purchase) {
