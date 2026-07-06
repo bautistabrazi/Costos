@@ -74,8 +74,9 @@ html[data-theme="dark"] {
 
 html,
 body {
+  width: 100%;
   max-width: 100%;
-  overflow-x: clip;
+  overflow-x: hidden;
 }
 
 @supports not (overflow: clip) {
@@ -86,8 +87,10 @@ body {
 }
 
 body {
+  position: relative;
   margin: 0;
   min-height: 100vh;
+  overscroll-behavior-x: none;
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--primary) 10%, transparent) 0 18%, transparent 18% 100%),
     linear-gradient(180deg, var(--page-start) 0%, var(--bg) 48%, var(--page-end) 100%);
@@ -117,9 +120,11 @@ p {
 
 .app-shell {
   width: min(1120px, 100%);
+  max-width: 100%;
   min-width: 0;
   margin: 0 auto;
   padding: 18px clamp(14px, 4vw, 32px) 34px;
+  overflow-x: hidden;
 }
 
 .app-content[hidden],
@@ -151,6 +156,8 @@ body:has(.app-content[hidden]) .header-actions {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
   margin-bottom: 16px;
   padding: 14px 16px;
@@ -247,7 +254,9 @@ h2 {
 .month-picker {
   display: grid;
   gap: 6px;
+  width: 100%;
   min-width: 168px;
+  max-width: 100%;
   padding: 10px;
   border: 1px solid var(--box-border);
   border-radius: 16px;
@@ -262,7 +271,9 @@ h2 {
 .summary-card,
 .card-detail-card,
 .projection-list {
+  max-width: 100%;
   min-width: 0;
+  overflow-x: hidden;
 }
 
 .month-picker label,
@@ -290,11 +301,30 @@ h2 {
 .month-picker input[type="month"],
 .entry-form input[type="date"],
 .entry-form input[type="month"] {
+  display: block;
+  -webkit-appearance: none;
+  appearance: none;
   min-width: 0;
+  max-width: 100%;
   min-height: 48px;
   line-height: 1.2;
   text-align: left;
   padding-right: 10px;
+}
+
+.month-picker input[type="month"]::-webkit-date-and-time-value,
+.entry-form input[type="date"]::-webkit-date-and-time-value,
+.entry-form input[type="month"]::-webkit-date-and-time-value {
+  min-width: 0;
+  text-align: left;
+}
+
+.month-picker input[type="month"]::-webkit-calendar-picker-indicator,
+.entry-form input[type="date"]::-webkit-calendar-picker-indicator,
+.entry-form input[type="month"]::-webkit-calendar-picker-indicator {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
 }
 
 .money-input {
@@ -754,6 +784,7 @@ body:has(.app-content[hidden]) .auth-panel {
   display: flex;
   gap: 8px;
   overflow-x: auto;
+  overscroll-behavior-inline: contain;
   max-width: 100%;
   margin: 0 0 12px;
   padding: 2px 2px 8px;
@@ -1031,8 +1062,27 @@ body:has(.app-content[hidden]) .auth-panel {
 }
 
 @media (max-width: 680px) {
+  body {
+    width: 100%;
+    max-width: 100dvw;
+    overflow-x: hidden;
+  }
+
   .app-shell {
-    padding-top: 16px;
+    width: 100%;
+    max-width: 100dvw;
+    padding: 12px 10px 28px;
+  }
+
+  .app-content,
+  .hero-summary,
+  .tabs,
+  .panel,
+  .entry-form,
+  .list,
+  .projection-list {
+    width: 100%;
+    max-width: 100%;
   }
 
   body:has(.app-content[hidden]) .app-shell {
@@ -1041,7 +1091,13 @@ body:has(.app-content[hidden]) .auth-panel {
 
   .app-header {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     align-items: start;
+    width: 100%;
+    max-width: 100%;
+    gap: 12px;
+    padding: 12px;
+    overflow: hidden;
   }
 
   body:has(.app-content[hidden]) .app-header {
@@ -1054,7 +1110,12 @@ body:has(.app-content[hidden]) .auth-panel {
 
   .header-actions {
     display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    align-items: end;
+    gap: 8px;
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
   body:has(.app-content[hidden]) .header-actions {
@@ -1065,11 +1126,32 @@ body:has(.app-content[hidden]) .auth-panel {
   .theme-toggle {
     justify-content: center;
     width: 48px;
-    justify-self: center;
+    justify-self: start;
   }
 
   .month-picker {
+    min-width: 0;
     width: 100%;
+    max-width: 100%;
+    padding: 8px;
+    overflow: hidden;
+  }
+
+  .month-picker input,
+  .entry-form input,
+  .entry-form select {
+    min-width: 0;
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  .month-picker input[type="month"],
+  .entry-form input[type="date"],
+  .entry-form input[type="month"] {
+    width: 100%;
+    max-width: 100%;
+    min-height: 44px;
+    padding: 8px 9px;
   }
 
   .summary-grid {
