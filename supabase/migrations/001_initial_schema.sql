@@ -28,8 +28,7 @@ create table public.accounts (
 create table public.credit_cards (
   id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id) on delete cascade,
   name text not null check (char_length(name) between 1 and 80), issuer text not null check (char_length(issuer) between 1 and 100),
-  brand text not null, last_four char(4) not null check (last_four ~ '^[0-9]{4}$'), color char(7) not null default '#5658d4',
-  closing_day smallint not null check (closing_day between 1 and 31), due_day smallint not null check (due_day between 1 and 31),
+  brand text not null, color char(7) not null default '#5658d4',
   total_limit numeric(14,2) not null default 0 check (total_limit >= 0), available_limit numeric(14,2) check (available_limit >= 0),
   currency char(3) not null default 'ARS', active boolean not null default true,
   created_at timestamptz not null default now(), updated_at timestamptz not null default now(),
@@ -60,6 +59,7 @@ create table public.transactions (
   foreign key(category_id,user_id) references public.categories(id,user_id) on delete set null (category_id),
   check ((payment_method='credit_card' and credit_card_id is not null) or (payment_method<>'credit_card' and credit_card_id is null)),
   check (installment_count=1 or first_due_date is not null),
+  check (payment_method<>'credit_card' or first_due_date is not null),
   check ((is_recurring and recurrence_frequency is not null) or not is_recurring)
 );
 create table public.installment_plans (
@@ -150,17 +150,17 @@ end $$;
 create trigger validate_transaction_refs before insert or update on public.transactions for each row execute function public.validate_owned_references();
 
 create or replace function public.create_transaction_with_installments(p_payload jsonb) returns uuid language plpgsql security invoker set search_path=public as $$
-declare v_id uuid:=coalesce((p_payload->>'id')::uuid,gen_random_uuid());v_card public.credit_cards;v_plan uuid;v_count int:=coalesce((p_payload->>'installment_count')::int,1);v_total numeric:=(p_payload->>'amount')::numeric;v_base int;v_cents int;v_amount numeric;v_due date;v_due_month date;v_step interval;v_tags jsonb;v_tag text;v_tag_id uuid;v_purchase date:=(p_payload->>'purchase_date')::date;v_period date;v_statement char(7);v_overridden boolean:=nullif(p_payload->>'statement_period_override','') is not null;
+declare v_id uuid:=coalesce((p_payload->>'id')::uuid,gen_random_uuid());v_card public.credit_cards;v_plan uuid;v_count int:=coalesce((p_payload->>'installment_count')::int,1);v_total numeric:=(p_payload->>'amount')::numeric;v_base int;v_cents int;v_amount numeric;v_due date;v_step interval;v_tags jsonb;v_tag text;v_tag_id uuid;v_purchase date:=(p_payload->>'purchase_date')::date;v_period date;v_statement char(7);v_overridden boolean:=nullif(p_payload->>'statement_period_override','') is not null;
 begin
  if (p_payload->>'user_id')::uuid<>auth.uid() then raise exception 'Usuario inválido'; end if;
  if exists(select 1 from public.transactions where user_id=auth.uid() and client_id=(p_payload->>'client_id')::uuid) then return (select id from public.transactions where user_id=auth.uid() and client_id=(p_payload->>'client_id')::uuid); end if;
  if p_payload->>'credit_card_id' is not null then
   select * into v_card from public.credit_cards where id=(p_payload->>'credit_card_id')::uuid and user_id=auth.uid(); if not found then raise exception 'Tarjeta inválida'; end if;
+  v_due:=nullif(p_payload->>'first_due_date','')::date;
+  if v_due is null then raise exception 'El vencimiento es obligatorio para consumos con tarjeta'; end if;
   if v_overridden then v_period:=to_date((p_payload->>'statement_period_override')||'-01','YYYY-MM-DD');
-  else v_period:=date_trunc('month',v_purchase)::date+case when extract(day from v_purchase)>v_card.closing_day then interval '1 month' else interval '0 month' end; end if;
+  else v_period:=date_trunc('month',v_due)::date; end if;
   v_statement:=to_char(v_period,'YYYY-MM');
-  v_due_month:=(date_trunc('month',v_period)+case when v_card.due_day<=v_card.closing_day then interval '1 month' else interval '0 month' end)::date;
-  v_due:=make_date(extract(year from v_due_month)::int,extract(month from v_due_month)::int,least(v_card.due_day,extract(day from(date_trunc('month',v_due_month)+interval '1 month - 1 day'))::int));
  end if;
  insert into public.transactions(id,user_id,client_id,credit_card_id,category_id,description,amount,purchase_date,payment_method,currency,installment_count,current_installment,first_due_date,merchant,notes,is_recurring,recurrence_frequency,statement_period,statement_overridden)
  values(v_id,auth.uid(),(p_payload->>'client_id')::uuid,nullif(p_payload->>'credit_card_id','')::uuid,nullif(p_payload->>'category_id','')::uuid,p_payload->>'description',v_total,v_purchase,(p_payload->>'payment_method')::public.payment_method,coalesce(p_payload->>'currency','ARS'),v_count,coalesce((p_payload->>'current_installment')::int,1),nullif(p_payload->>'first_due_date','')::date,nullif(p_payload->>'merchant',''),nullif(p_payload->>'notes',''),coalesce((p_payload->>'is_recurring')::boolean,false),nullif(p_payload->>'recurrence_frequency','')::public.recurrence_frequency,v_statement,v_overridden);
@@ -194,7 +194,7 @@ end $$;
 create or replace function public.import_user_data(p_payload jsonb) returns void language plpgsql security invoker set search_path=public as $$
 declare rec jsonb;v_plan_id uuid;v_transaction_id uuid;begin
  for rec in select * from jsonb_array_elements(coalesce(p_payload->'accounts','[]')) loop insert into public.accounts(id,user_id,name,type,currency,active) values(coalesce((rec->>'id')::uuid,gen_random_uuid()),auth.uid(),rec->>'name',coalesce(rec->>'type','other'),coalesce(rec->>'currency','ARS'),coalesce((rec->>'active')::boolean,true)) on conflict(id) do update set name=excluded.name,type=excluded.type,currency=excluded.currency,active=excluded.active,updated_at=now() where accounts.user_id=auth.uid(); end loop;
- for rec in select * from jsonb_array_elements(coalesce(p_payload->'credit_cards','[]')) loop insert into public.credit_cards(id,user_id,name,issuer,brand,last_four,color,closing_day,due_day,total_limit,available_limit,currency,active) values(coalesce((rec->>'id')::uuid,gen_random_uuid()),auth.uid(),rec->>'name',rec->>'issuer',rec->>'brand',rec->>'last_four',coalesce(rec->>'color','#5658d4'),(rec->>'closing_day')::int,(rec->>'due_day')::int,(rec->>'total_limit')::numeric,nullif(rec->>'available_limit','')::numeric,coalesce(rec->>'currency','ARS'),coalesce((rec->>'active')::boolean,true)) on conflict(id) do update set name=excluded.name,issuer=excluded.issuer,updated_at=now() where credit_cards.user_id=auth.uid(); end loop;
+ for rec in select * from jsonb_array_elements(coalesce(p_payload->'credit_cards','[]')) loop insert into public.credit_cards(id,user_id,name,issuer,brand,color,total_limit,available_limit,currency,active) values(coalesce((rec->>'id')::uuid,gen_random_uuid()),auth.uid(),rec->>'name',rec->>'issuer',rec->>'brand',coalesce(rec->>'color','#5658d4'),(rec->>'total_limit')::numeric,nullif(rec->>'available_limit','')::numeric,coalesce(rec->>'currency','ARS'),coalesce((rec->>'active')::boolean,true)) on conflict(id) do update set name=excluded.name,issuer=excluded.issuer,brand=excluded.brand,color=excluded.color,total_limit=excluded.total_limit,available_limit=excluded.available_limit,currency=excluded.currency,active=excluded.active,updated_at=now() where credit_cards.user_id=auth.uid(); end loop;
  for rec in select * from jsonb_array_elements(coalesce(p_payload->'categories','[]')) loop insert into public.categories(id,user_id,name,icon,color,sort_order) values(coalesce((rec->>'id')::uuid,gen_random_uuid()),auth.uid(),rec->>'name',coalesce(rec->>'icon','Shapes'),coalesce(rec->>'color','#64748b'),coalesce((rec->>'sort_order')::int,100)) on conflict(id) do update set name=excluded.name,color=excluded.color,updated_at=now() where categories.user_id=auth.uid(); end loop;
  -- Los movimientos se importan por la función idempotente para mantener las reglas y cuotas.
  for rec in select * from jsonb_array_elements(coalesce(p_payload->'transactions','[]')) loop perform public.create_transaction_with_installments(rec||jsonb_build_object('user_id',auth.uid(),'client_id',coalesce(rec->>'client_id',gen_random_uuid()::text),'tags','[]'::jsonb,'skip_recurring_creation',true)); end loop;

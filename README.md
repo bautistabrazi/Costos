@@ -6,10 +6,11 @@ Faro es una PWA responsive para registrar gastos personales, administrar tarjeta
 
 - Registro, inicio de sesión, recuperación de contraseña y rutas privadas con Supabase Auth.
 - Dashboard mensual con gastos, pendientes, compromisos futuros, categorías y actividad reciente.
-- Alta, edición y eliminación de tarjetas sin almacenar números completos ni códigos de seguridad.
+- Alta, edición y eliminación de tarjetas sin almacenar ningún número ni código de seguridad.
 - Registro manual de consumos por efectivo, crédito, débito, transferencia y billeteras.
 - Planes de cuotas con distribución exacta de centavos y calendario de vencimientos.
-- Cálculo de resumen según fecha de compra y día de cierre, con corrección manual del período.
+- Vencimiento de tarjeta definido en cada consumo y período de resumen corregible manualmente.
+- Calendario mensual con consumos por día, totales diarios, promedio y día de mayor gasto.
 - Historial con búsqueda, filtros por mes, categoría, medio e importe.
 - Presupuestos generales, por categoría o medio de pago, con alertas visuales.
 - Gastos recurrentes y generación idempotente de los próximos 12 meses.
@@ -44,7 +45,7 @@ React 19, Vite 8, JavaScript, Tailwind CSS 4, React Router, Supabase, PostgreSQL
    VITE_SUPABASE_ANON_KEY=TU_CLAVE_ANON
    ```
 
-3. En Supabase, abrí **SQL Editor**, copiá el contenido de `supabase/migrations/001_initial_schema.sql` y ejecutalo una vez.
+3. En un proyecto nuevo, abrí **SQL Editor**, copiá `supabase/migrations/001_initial_schema.sql` y ejecutalo una vez. Si ya habías instalado la versión anterior, ejecutá después `supabase/migrations/002_variable_card_dates.sql`.
 
 4. En **Authentication → URL Configuration**, configurá:
 
@@ -63,7 +64,7 @@ La aplicación muestra instrucciones de configuración si las variables de Supab
 
 - `profiles`: preferencias regionales y personales.
 - `accounts`: cuentas o fuentes de fondos.
-- `credit_cards`: metadatos seguros de tarjetas; solo últimos cuatro dígitos.
+- `credit_cards`: nombre, entidad, marca, color, límites, moneda y estado; no guarda dígitos de la tarjeta.
 - `categories`: categorías iniciales y personalizadas.
 - `transactions`: compra original y medio de pago.
 - `installment_plans` / `installments`: plan y vencimientos individuales.
@@ -72,17 +73,16 @@ La aplicación muestra instrucciones de configuración si las variables de Supab
 - `budgets`: límites mensuales por alcance.
 - `tags` / `transaction_tags`: etiquetado muchos-a-muchos.
 
-Todas las tablas privadas incluyen `user_id`. Las políticas RLS restringen lectura y escritura a `auth.uid()`. La base también valida importes, cuotas, propiedad de referencias, formato de períodos y últimos cuatro dígitos.
+Todas las tablas privadas incluyen `user_id`. Las políticas RLS restringen lectura y escritura a `auth.uid()`. La base también valida importes, cuotas, propiedad de referencias y formato de períodos.
 
-## Cierres y cuotas
+## Vencimientos variables y cuotas
 
-Para una compra con tarjeta:
+Faro no presupone días fijos de cierre o vencimiento. Para cada compra con tarjeta:
 
-- Si el día de compra es menor o igual al cierre, se asigna al resumen del mes de compra.
-- Si es posterior, se asigna al resumen siguiente.
-- Si el vencimiento ocurre antes o el mismo día que el cierre, se calcula en el mes posterior al resumen.
-- Los días 29, 30 o 31 se ajustan al último día real del mes.
+- Se solicita la fecha estimada del vencimiento o, en cuotas, la fecha del primer vencimiento.
+- El período del resumen se toma del mes de esa fecha.
 - Un período indicado manualmente tiene prioridad y queda marcado como corregido.
+- Las cuotas siguientes avanzan un mes desde el primer vencimiento informado.
 
 Las compras en cuotas se dividen en centavos enteros. Cualquier diferencia queda en la última cuota, evitando errores de redondeo. Los informes mensuales deben contabilizar la cuota del período, no volver a sumar el total original.
 
@@ -121,7 +121,7 @@ pnpm test
 pnpm build
 ```
 
-Las pruebas verifican el cambio de resumen después del cierre y la conservación exacta de centavos al dividir cuotas.
+Las pruebas verifican la progresión desde el vencimiento indicado y la conservación exacta de centavos al dividir cuotas.
 
 ## Despliegue
 
@@ -139,4 +139,4 @@ Las pruebas verifican el cambio de resumen después del cierre y la conservació
 
 ## Seguridad
 
-No se almacenan números completos, CVV, claves bancarias ni contraseñas de entidades financieras. La clave anónima de Supabase está diseñada para estar en el cliente; la seguridad real depende de RLS. Nunca agregues la `service_role` al frontend ni al repositorio.
+No se almacenan dígitos de tarjetas, CVV, claves bancarias ni contraseñas de entidades financieras. La clave anónima de Supabase está diseñada para estar en el cliente; la seguridad real depende de RLS. Nunca agregues la `service_role` al frontend ni al repositorio.
